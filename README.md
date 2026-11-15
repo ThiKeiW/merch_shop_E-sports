@@ -86,6 +86,19 @@ npm run dev
 
 El proxy de Vite envía `/api` a `http://localhost:8080` (configurable con `VITE_API_PROXY_TARGET`).
 
+## Problemas comunes
+
+- **Vite no encuentra un import o un alias (`@/...`)** después del primer arranque: el dev server quedó con estado viejo al inicializarse el volumen de `node_modules`. Se resuelve con `docker compose restart frontend`.
+- **Se agregaron/quitaron dependencias en `frontend/package.json`**: reconstruir la imagen y el volumen de dependencias:
+
+  ```bash
+  docker compose down
+  docker volume rm merch-shop_frontend-node-modules
+  docker compose up -d --build
+  ```
+
+- **El backend no conecta a MySQL**: revisar que `merch-mysql` esté `healthy` (`docker compose ps`) y que el puerto `DB_PORT` del `.env` no choque con un MySQL local.
+
 ## Pruebas
 
 ```bash
