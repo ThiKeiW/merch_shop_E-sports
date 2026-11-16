@@ -1,2 +1,6 @@
-// Fase 2: registro/login local, Google OAuth y manejo de JWT.
-export {}
+export { LoginPage } from './LoginPage'
+export { RegisterPage } from './RegisterPage'
+export { RequireAuth, RequireRole } from './guards'
+export { useAuthStore } from './store'
+export { useSession } from './useSession'
+export type { AuthResponse, LoginPayload, RegisterPayload, Role, SessionUser } from './types'
