@@ -2,7 +2,7 @@ import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 
 import { AdminPage } from '@/features/admin'
 import { LoginPage, RegisterPage, RequireRole, useAuthStore, useSession } from '@/features/auth'
-import { HomePage } from '@/features/catalog'
+import { CatalogPage, HomePage } from '@/features/catalog'
 
 function NotFound() {
   return (
@@ -30,7 +30,7 @@ export default function App() {
             Merch<span className="text-zinc-500">//</span>Shop
           </Link>
           <nav className="flex items-center gap-4 text-xs font-semibold tracking-[0.18em] text-zinc-400 uppercase sm:gap-6">
-            <Link to="/" className="transition-colors hover:text-white">
+            <Link to="/catalogo" className="transition-colors hover:text-white">
               Catálogo
             </Link>
             <span className="hidden cursor-not-allowed text-zinc-600 sm:inline" title="Disponible en la Fase 5">
@@ -77,6 +77,7 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/catalogo" element={<CatalogPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route
@@ -94,7 +95,7 @@ export default function App() {
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>Proyecto académico y demostrativo. Sin envíos ni cobros reales.</p>
-          <p className="tracking-[0.18em] uppercase">Fase 2 — Autenticación (email y Google)</p>
+          <p className="tracking-[0.18em] uppercase">Fase 3 — Catálogo con filtros</p>
         </div>
       </footer>
     </div>
