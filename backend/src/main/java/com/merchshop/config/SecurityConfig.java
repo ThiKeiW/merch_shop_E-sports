@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,
+                                "/api/catalog/**",
                                 "/api/games/**", "/api/teams/**", "/api/categories/**",
                                 "/api/subcategories/**", "/api/products/**").permitAll()
                         .anyRequest().authenticated())
