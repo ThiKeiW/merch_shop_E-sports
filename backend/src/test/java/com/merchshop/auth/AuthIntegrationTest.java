@@ -110,6 +110,25 @@ class AuthIntegrationTest {
     }
 
     @Test
+    void loginConGoogleSinConfigurarDevuelve503() throws Exception {
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"idToken\":\"un-token-cualquiera\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value(
+                        "Google OAuth no está configurado: define GOOGLE_CLIENT_ID en el servidor"));
+    }
+
+    @Test
+    void loginConGoogleSinTokenDevuelve400() throws Exception {
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"idToken\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.idToken").isNotEmpty());
+    }
+
+    @Test
     void loginConCredencialesValidasDevuelveToken() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(APPLICATION_JSON)

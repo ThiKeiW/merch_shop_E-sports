@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.merchshop.auth.dto.AuthResponse;
+import com.merchshop.auth.dto.GoogleLoginRequest;
 import com.merchshop.auth.dto.LoginRequest;
 import com.merchshop.auth.dto.RegisterRequest;
 import com.merchshop.auth.dto.UserResponse;
@@ -36,6 +37,11 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/google")
+    public AuthResponse google(@Valid @RequestBody GoogleLoginRequest request) {
+        return authService.loginWithGoogle(request);
     }
 
     @GetMapping("/me")

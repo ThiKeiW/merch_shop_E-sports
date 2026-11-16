@@ -77,7 +77,7 @@ Reglas de funcionamiento:
 
 ## 5. Fases
 
-Sin plazo fijo; estimaciones para una sola persona (≈ 12–14 semanas a ritmo medio):
+Sin plazo fijo; estimaciones para una sola persona (≈ 13–16 semanas a ritmo medio):
 
 | Fase | Contenido | Entregable | Est. |
 |---|---|---|---|
@@ -87,8 +87,9 @@ Sin plazo fijo; estimaciones para una sola persona (≈ 12–14 semanas a ritmo 
 | **4. Admin + scraper** | CRUD productos/stock, módulo de scraping de productos e imágenes (descarga, optimización, almacenamiento, staging de revisión) | Panel funcional y catálogo poblable | 2–3 sem |
 | **5. Carrito y pedidos** | Carrito localStorage, creación de pedido, reserva y descuento de stock | Flujo hasta pedido `PENDING` | 1–2 sem |
 | **6. Pagos** | Payment Element, webhooks idempotentes, estados, correo con `@Async` | Compra completa en Test Mode | 2 sem |
-| **7. Calidad y rendimiento** | Cobertura de tests, métricas Micrometer/Prometheus/Grafana, escenarios k6 hasta 1000 VUs, ajustes | Informe de carga | 1–2 sem |
-| **8. Despliegue** | Pipeline completo en GitHub Actions, imágenes a Azure Container Registry, Azure Container Apps | Entorno público | 1 sem |
+| **7. Rediseño de interfaces** | Auditoría visual, sistema de diseño (tipografía, color, espaciado, componentes), rediseño de home, catálogo, detalle, carrito, checkout, admin y estados vacíos/error/carga; responsive y accesibilidad AA | UI renovada y coherente | 1–2 sem |
+| **8. Calidad y rendimiento** | Cobertura de tests, métricas Micrometer/Prometheus/Grafana, escenarios k6 hasta 1000 VUs, ajustes | Informe de carga | 1–2 sem |
+| **9. Despliegue** | Pipeline completo en GitHub Actions, imágenes a Azure Container Registry, Azure Container Apps | Entorno público | 1 sem |
 
 ## 6. Pruebas
 
