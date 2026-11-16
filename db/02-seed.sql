@@ -80,3 +80,17 @@ INSERT IGNORE INTO product_variants (id, product_id, sku, size, color, price_del
     (3, 1, 'T1-JERSEY-2024-L',   'L',   'NEGRO', 0.00, 8),
     (4, 2, 'SEN-MOUSEPAD-XL',    'XL',  'NEGRO', 0.00, 30),
     (5, 3, 'TS-AEGIS-FIG-UNICA','UNICA','ROJO',  0.00, 5);
+
+-- ---------------------------------------------------------------------
+-- Usuarios de demostración (contraseñas hasheadas con BCrypt, costo 10)
+--   admin@merchshop.dev   / Admin1234!    -> ADMIN
+--   cliente@merchshop.dev / Cliente1234!  -> CUSTOMER
+-- Cambiar ambas credenciales antes de cualquier despliegue real.
+-- ---------------------------------------------------------------------
+INSERT IGNORE INTO users (id, email, password_hash, display_name, role, provider, active) VALUES
+    (1, 'admin@merchshop.dev',
+     '$2a$10$e5SjaWv9vLvOYiWeDR57Wu6Ne4.M.2n/zxJEWTmuac1nAK2rU4Er6',
+     'Admin Demo', 'ADMIN', 'LOCAL', 1),
+    (2, 'cliente@merchshop.dev',
+     '$2a$10$pinAzT.jCxvZMlrRD4gL1utSko8qGhNKSaMz6sXQ0PO0yLFFrpCoS',
+     'Cliente Demo', 'CUSTOMER', 'LOCAL', 1);
