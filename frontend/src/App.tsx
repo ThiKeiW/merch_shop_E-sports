@@ -94,7 +94,7 @@ export default function App() {
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>Proyecto académico y demostrativo. Sin envíos ni cobros reales.</p>
-          <p className="tracking-[0.18em] uppercase">Fase 2 — Autenticación</p>
+          <p className="tracking-[0.18em] uppercase">Fase 2 — Autenticación (email y Google)</p>
         </div>
       </footer>
     </div>
