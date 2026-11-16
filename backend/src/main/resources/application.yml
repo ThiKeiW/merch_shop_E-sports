@@ -50,6 +50,11 @@ management:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    jwt:
+      issuer: merch-shop
+      secret: ${JWT_SECRET:dev-secret-cambiar-en-produccion-1234567890}
+      ttl: ${JWT_TTL:PT24H}
   async:
     mail:
       core-pool-size: 2
