@@ -49,6 +49,8 @@ El backend emite un **JWT firmado con HS256** al registrarse o iniciar sesión; 
 | `POST` | `/api/auth/google` | Público | Recibe `{ idToken }` de Google Identity Services, valida firma/emisor/audiencia y devuelve token + usuario. |
 | `GET` | `/api/auth/me` | Autenticado | Devuelve el usuario del token. |
 | `GET` | `/api/admin/users` | Solo `ADMIN` | Lista de usuarios registrados. |
+| `GET` | `/api/catalog/products` | Público | Listado paginado con filtros acumulativos (`game`, `team`, `category`, `q`, `sort`, `page`, `size`). |
+| `GET` | `/api/catalog/facets` | Público | Juegos, categorías y equipos; los equipos se filtran por los `game` seleccionados. |
 
 Roles: `CUSTOMER` (por defecto) y `ADMIN`. En el frontend, `/admin` está protegida por `RequireRole`; la API responde `401` sin token y `403` con rol insuficiente.
 
@@ -76,11 +78,20 @@ El backend verifica el ID token contra el JWKS de Google (`https://www.googleapi
 
 **Probar sin credenciales:** el flujo local (registro/login por email, roles) no depende de Google. Para una prueba real hay que crear el client ID; los ID tokens no se pueden falsificar sin la clave privada de Google.
 
+## Catálogo
+
+`/catalogo` es público y vive en la URL: `?game=valorant&team=sentinels&category=accesorios&q=pad&sort=price-asc&page=1`. Los parámetros `game`, `team` y `category` se pueden repetir (se combinan con OR); entre grupos distintos se combinan con AND. Cambiar cualquier filtro reinicia la página a la primera.
+
+- **Backend:** `catalog/` con entidades de solo lectura y `JpaSpecificationExecutor`; la especificación compone predicados solo para los filtros presentes y `sort` acepta `relevance` (por defecto), `newest`, `price-asc`, `price-desc` y `name`. `size` se limita a 48.
+- **Facets:** el panel de equipos se recalcula con los juegos seleccionados (`GET /api/catalog/facets?game=...`); si un equipo deja de estar disponible, el frontend lo quita de la URL.
+- **Frontend:** `features/catalog` contiene `CatalogPage`, `ProductCard`, `filters.ts` (parseo/serialización de la URL) y `api.ts`. Los productos aún no tienen imágenes: la tarjeta muestra un placeholder con el color del juego y un monograma, y se reemplazará con las imágenes del scraper (Fase 4).
+- **Seed:** 12 productos de ejemplo repartidos entre los 4 juegos y las 3 categorías para probar combinaciones de filtros.
+
 
 ## Estructura
 
 ```
-backend/    Spring Boot: config, common (errores, health), auth, security (JWT), user, admin
+backend/    Spring Boot: config, common (errores, health), auth, security (JWT), catalog, user, admin
 db/         01-schema.sql (DDL) y 02-seed.sql (datos), ambos idempotentes
 frontend/   SPA por funcionalidades: auth, catalog, cart, checkout, admin, shared
 .github/    CI: backend, frontend y validación de Compose
@@ -168,7 +179,7 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 |---|---|---|
 | 1 | Base: repos, Compose, SQL, CI, esqueletos | Hecha |
 | 2 | Auth JWT + Google OAuth + roles | Hecha |
-| 3 | Catálogo con filtros acumulativos y home en rayo | Pendiente |
+| 3 | Catálogo: API y vista con filtros acumulativos, home en rayo y 12 productos de seed | Parcial: listado con filtros; detalle de producto pendiente |
 | 4 | Admin (productos, stock, pedidos) + scraper | Pendiente |
 | 5 | Carrito localStorage y pedidos con reserva de stock | Pendiente |
 | 6 | Stripe Payment Element y webhooks idempotentes | Pendiente |
@@ -182,4 +193,4 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 - Se usa **Spring Boot 4.1** (Java 21): es la rama estable actual de Spring Boot; los ejemplos de la versión 3.x pueden diferir en nombres de starters (`spring-boot-starter-webmvc`) y en la API de Spring Security.
 - **Spring Boot 4 usa Jackson 3** (`tools.jackson.databind`); las importaciones clásicas de `com.fasterxml.jackson` no están en el classpath.
 - La autenticación usa **JWT propio** (sin servidor de identidad externo) para mantener el proyecto autocontenido; el contrato está en `/api/auth/*`.
-- Los productos del seed aún no tienen imágenes: se generan con el scraper en la Fase 4.
+- Los productos del seed aún no tienen imágenes: se generan con el scraper en la Fase 4; mientras tanto el catálogo usa placeholders.

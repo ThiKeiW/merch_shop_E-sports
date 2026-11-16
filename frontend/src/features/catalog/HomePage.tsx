@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const games = [
   {
     slug: 'league-of-legends',
@@ -44,13 +46,20 @@ export function HomePage() {
           Elige un juego para entrar al catálogo. Los filtros de juego, categoría, subcategoría y
           equipo se acumulan mientras navegas.
         </p>
+        <Link
+          to="/catalogo"
+          className="mt-6 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-zinc-300 uppercase underline underline-offset-4 transition-colors hover:text-white"
+        >
+          Ver todo el catálogo
+          <span aria-hidden>→</span>
+        </Link>
       </header>
 
       <div className="flex flex-col gap-3 md:flex-row md:gap-0">
         {games.map((game) => (
-          <a
+          <Link
             key={game.slug}
-            href={`/catalogo?game=${game.slug}`}
+            to={`/catalogo?game=${game.slug}`}
             className="rayo-panel group relative isolate flex min-h-44 flex-1 overflow-hidden bg-surface-2 p-6 transition-transform duration-300 hover:z-10 md:min-h-96"
             style={{ backgroundColor: `${game.accent}1a` }}
           >
@@ -86,7 +95,7 @@ export function HomePage() {
                 </span>
               </span>
             </span>
-          </a>
+          </Link>
         ))}
       </div>
     </section>
