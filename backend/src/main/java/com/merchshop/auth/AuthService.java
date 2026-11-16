@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.merchshop.auth.dto.AuthResponse;
+import com.merchshop.auth.dto.GoogleLoginRequest;
 import com.merchshop.auth.dto.LoginRequest;
 import com.merchshop.auth.dto.RegisterRequest;
 import com.merchshop.auth.dto.UserResponse;
 import com.merchshop.common.ApiException;
 import com.merchshop.security.JwtService;
+import com.merchshop.user.AuthProvider;
 import com.merchshop.user.User;
 import com.merchshop.user.UserRepository;
 
@@ -24,13 +26,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       GoogleTokenVerifier googleTokenVerifier) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.googleTokenVerifier = googleTokenVerifier;
     }
 
     @Transactional
@@ -63,6 +68,37 @@ public class AuthService {
         }
 
         return toAuthResponse(user);
+    }
+
+    /**
+     * Login con el ID token de Google Identity Services. Si el email ya existe
+     * se reutiliza la cuenta (aunque sea LOCAL); si no, se crea una cuenta
+     * GOOGLE sin contraseña.
+     */
+    @Transactional
+    public AuthResponse loginWithGoogle(GoogleLoginRequest request) {
+        GoogleTokenVerifier.GoogleIdentity identity = googleTokenVerifier.verify(request.idToken());
+        String email = normalizeEmail(identity.email());
+
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseGet(() -> createGoogleUser(identity, email));
+
+        if (!user.isActive()) {
+            throw ApiException.forbidden("La cuenta está deshabilitada");
+        }
+
+        return toAuthResponse(user);
+    }
+
+    private User createGoogleUser(GoogleTokenVerifier.GoogleIdentity identity, String email) {
+        String displayName = identity.name() != null && !identity.name().isBlank()
+                ? identity.name().trim()
+                : email.substring(0, email.indexOf('@'));
+
+        User user = new User(email, null, displayName);
+        user.setProvider(AuthProvider.GOOGLE);
+        user.setProviderId(identity.subject());
+        return userRepository.save(user);
     }
 
     public UserResponse getProfile(Long userId) {

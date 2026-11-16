@@ -46,6 +46,7 @@ El backend emite un **JWT firmado con HS256** al registrarse o iniciar sesión; 
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Público | Crea una cuenta (`email`, `password`, `displayName`) y devuelve token + usuario. |
 | `POST` | `/api/auth/login` | Público | Valida credenciales y devuelve token + usuario. |
+| `POST` | `/api/auth/google` | Público | Recibe `{ idToken }` de Google Identity Services, valida firma/emisor/audiencia y devuelve token + usuario. |
 | `GET` | `/api/auth/me` | Autenticado | Devuelve el usuario del token. |
 | `GET` | `/api/admin/users` | Solo `ADMIN` | Lista de usuarios registrados. |
 
@@ -60,7 +61,20 @@ Cuentas demo del seed:
 
 Variables relacionadas (ver `.env.example`): `JWT_SECRET` (mínimo 32 bytes) y `JWT_TTL` (ISO-8601, por defecto `PT24H`). En desarrollo, si no se define `JWT_SECRET` se usa un secreto de ejemplo; **en producción siempre hay que definirlo**.
 
-> Google OAuth queda como trabajo futuro: el esquema ya soporta `auth_provider`, pero el login social requiere credenciales de Google Cloud que no se incluyen en el repositorio.
+### Google OAuth
+
+El módulo está implementado y **deshabilitado por defecto**. Para activarlo:
+
+1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials) crea un **OAuth client ID** de tipo *Web application*.
+2. Añade como *Authorized JavaScript origins* `http://localhost:5173` (y el dominio de producción cuando exista).
+3. Copia el Client ID (no hace falta el secret) en `.env`:
+   - `GOOGLE_CLIENT_ID`: lo usa el backend para validar `aud` del ID token.
+   - `VITE_GOOGLE_CLIENT_ID`: lo usa el frontend para renderizar el botón (mismo valor).
+4. `docker compose up -d --build` (el frontend hornea la variable al arrancar Vite).
+
+El backend verifica el ID token contra el JWKS de Google (`https://www.googleapis.com/oauth2/v3/certs`), exige `email_verified` y crea la cuenta con `provider=GOOGLE`, `provider_id=<sub>` y sin contraseña; si el email ya existe se reutiliza la cuenta. Si `GOOGLE_CLIENT_ID` está vacío, el endpoint responde `503` y el botón no se muestra.
+
+**Probar sin credenciales:** el flujo local (registro/login por email, roles) no depende de Google. Para una prueba real hay que crear el client ID; los ID tokens no se pueden falsificar sin la clave privada de Google.
 
 
 ## Estructura
@@ -153,13 +167,14 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 | Fase | Contenido | Estado |
 |---|---|---|
 | 1 | Base: repos, Compose, SQL, CI, esqueletos | Hecha |
-| 2 | Auth JWT + Google OAuth + roles | Hecha (JWT y roles; OAuth pendiente) |
+| 2 | Auth JWT + Google OAuth + roles | Hecha |
 | 3 | Catálogo con filtros acumulativos y home en rayo | Pendiente |
 | 4 | Admin (productos, stock, pedidos) + scraper | Pendiente |
 | 5 | Carrito localStorage y pedidos con reserva de stock | Pendiente |
 | 6 | Stripe Payment Element y webhooks idempotentes | Pendiente |
-| 7 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
-| 8 | Despliegue en Azure | Pendiente |
+| 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Pendiente |
+| 8 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
+| 9 | Despliegue en Azure | Pendiente |
 
 ## Notas de decisiones
 

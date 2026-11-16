@@ -26,10 +26,12 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 import com.merchshop.auth.dto.AuthResponse;
+import com.merchshop.auth.dto.GoogleLoginRequest;
 import com.merchshop.auth.dto.LoginRequest;
 import com.merchshop.auth.dto.RegisterRequest;
 import com.merchshop.common.ApiException;
 import com.merchshop.security.JwtService;
+import com.merchshop.user.AuthProvider;
 import com.merchshop.user.Role;
 import com.merchshop.user.User;
 import com.merchshop.user.UserRepository;
@@ -40,13 +42,15 @@ class AuthServiceTest {
 
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+    private GoogleTokenVerifier googleTokenVerifier;
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         passwordEncoder = new BCryptPasswordEncoder(4);
-        authService = new AuthService(userRepository, passwordEncoder, jwtService());
+        googleTokenVerifier = mock(GoogleTokenVerifier.class);
+        authService = new AuthService(userRepository, passwordEncoder, jwtService(), googleTokenVerifier);
     }
 
     @Test
@@ -120,6 +124,60 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(new LoginRequest("nadie@merchshop.dev", "Cliente1234!")))
                 .isInstanceOf(ApiException.class)
                 .hasMessage("Email o contraseña incorrectos");
+    }
+
+    @Test
+    void loginConGoogleCreaCuentaNuevaSinPassword() {
+        when(googleTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleTokenVerifier.GoogleIdentity("google-sub-1", "Nuevo@Gmail.com", "Kevin"));
+        when(userRepository.findByEmailIgnoreCase("nuevo@gmail.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(20L);
+            return user;
+        });
+
+        AuthResponse response = authService.loginWithGoogle(new GoogleLoginRequest("id-token"));
+
+        assertThat(response.token()).isNotBlank();
+        assertThat(response.user().email()).isEqualTo("nuevo@gmail.com");
+        assertThat(response.user().displayName()).isEqualTo("Kevin");
+        assertThat(response.user().role()).isEqualTo(Role.CUSTOMER);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        User saved = captor.getValue();
+
+        assertThat(saved.getProvider()).isEqualTo(AuthProvider.GOOGLE);
+        assertThat(saved.getProviderId()).isEqualTo("google-sub-1");
+        assertThat(saved.getPasswordHash()).isNull();
+    }
+
+    @Test
+    void loginConGoogleReutilizaCuentaExistente() {
+        User existente = user(5L, "cliente@merchshop.dev", passwordEncoder.encode("Cliente1234!"));
+        when(googleTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleTokenVerifier.GoogleIdentity("google-sub-2", "cliente@merchshop.dev", null));
+        when(userRepository.findByEmailIgnoreCase("cliente@merchshop.dev")).thenReturn(Optional.of(existente));
+
+        AuthResponse response = authService.loginWithGoogle(new GoogleLoginRequest("id-token"));
+
+        assertThat(response.user().id()).isEqualTo(5L);
+        assertThat(response.user().displayName()).isEqualTo("Usuario Test");
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void loginConGoogleDeCuentaDeshabilitadaLanzaProhibido() {
+        User existente = user(6L, "cliente@merchshop.dev", null);
+        existente.setActive(false);
+        when(googleTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleTokenVerifier.GoogleIdentity("google-sub-3", "cliente@merchshop.dev", "Cliente"));
+        when(userRepository.findByEmailIgnoreCase("cliente@merchshop.dev")).thenReturn(Optional.of(existente));
+
+        assertThatThrownBy(() -> authService.loginWithGoogle(new GoogleLoginRequest("id-token")))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("deshabilitada");
     }
 
     private JwtService jwtService() {

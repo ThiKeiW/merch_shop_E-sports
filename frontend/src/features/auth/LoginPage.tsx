@@ -4,8 +4,10 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '@/shared/api'
 
-import { login } from './api'
+import { login, loginWithGoogle } from './api'
 import { Field } from './Field'
+import { GoogleButton } from './GoogleButton'
+import { isGoogleEnabled } from './googleConfig'
 import { useAuthStore } from './store'
 
 export function LoginPage() {
@@ -16,12 +18,24 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const goToDestination = () => {
+    const from = (location.state as { from?: string } | null)?.from
+    navigate(from && from !== '/login' ? from : '/', { replace: true })
+  }
+
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (session) => {
       setSession(session)
-      const from = (location.state as { from?: string } | null)?.from
-      navigate(from && from !== '/login' ? from : '/', { replace: true })
+      goToDestination()
+    },
+  })
+
+  const googleMutation = useMutation({
+    mutationFn: loginWithGoogle,
+    onSuccess: (session) => {
+      setSession(session)
+      goToDestination()
     },
   })
 
@@ -29,10 +43,11 @@ export function LoginPage() {
     return <Navigate to="/" replace />
   }
 
+  const activeError = googleMutation.error ?? mutation.error
   const errorMessage =
-    mutation.error instanceof ApiError
-      ? mutation.error.message
-      : mutation.error
+    activeError instanceof ApiError
+      ? activeError.message
+      : activeError
         ? 'No pudimos conectar con el servidor. Intenta de nuevo.'
         : null
 
@@ -88,6 +103,23 @@ export function LoginPage() {
           {mutation.isPending ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
+
+      {isGoogleEnabled() ? (
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-3 text-[10px] font-semibold tracking-[0.3em] text-zinc-600 uppercase">
+            <span className="h-px flex-1 bg-zinc-800" />
+            o
+            <span className="h-px flex-1 bg-zinc-800" />
+          </div>
+          <GoogleButton
+            onCredential={(idToken) => googleMutation.mutate(idToken)}
+            disabled={googleMutation.isPending || mutation.isPending}
+          />
+          {googleMutation.isPending ? (
+            <p className="text-center text-xs text-zinc-500">Conectando con Google…</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <p className="mt-6 text-xs text-zinc-500">
         ¿Sin cuenta?{' '}
