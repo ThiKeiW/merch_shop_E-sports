@@ -16,6 +16,13 @@ export function register(payload: RegisterPayload): Promise<AuthResponse> {
   })
 }
 
+export function loginWithGoogle(idToken: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  })
+}
+
 export function fetchMe(): Promise<SessionUser> {
   return apiFetch<SessionUser>('/auth/me')
 }

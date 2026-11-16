@@ -1,4 +1,6 @@
 export { LoginPage } from './LoginPage'
+export { GoogleButton } from './GoogleButton'
+export { isGoogleEnabled } from './googleConfig'
 export { RegisterPage } from './RegisterPage'
 export { RequireAuth, RequireRole } from './guards'
 export { useAuthStore } from './store'
