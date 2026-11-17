@@ -148,4 +148,25 @@ class CatalogIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[*].price", everyItem(greaterThan(0.0))));
     }
+
+    @Test
+    void elDetalleDevuelveVariantesYPrecioFinal() throws Exception {
+        mockMvc.perform(get("/api/catalog/products/jersey-t1-2024"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slug").value("jersey-t1-2024"))
+                .andExpect(jsonPath("$.price").value(69.99))
+                .andExpect(jsonPath("$.game.slug").value("league-of-legends"))
+                .andExpect(jsonPath("$.team.slug").value("t1"))
+                .andExpect(jsonPath("$.variants", hasSize(3)))
+                .andExpect(jsonPath("$.variants[*].size", contains("L", "M", "S")))
+                .andExpect(jsonPath("$.variants[0].finalPrice").value(69.99))
+                .andExpect(jsonPath("$.variants[0].available").value(true))
+                .andExpect(jsonPath("$.images", hasSize(0)));
+    }
+
+    @Test
+    void elDetalleDeUnProductoInexistenteDevuelve404() throws Exception {
+        mockMvc.perform(get("/api/catalog/products/no-existe"))
+                .andExpect(status().isNotFound());
+    }
 }

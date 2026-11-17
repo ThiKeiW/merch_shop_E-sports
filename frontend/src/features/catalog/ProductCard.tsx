@@ -1,27 +1,13 @@
+import { Link } from 'react-router-dom'
+
+import { formatPrice, monogram } from './format'
 import type { ProductSummary } from './types'
-
-function formatPrice(price: number, currency: string): string {
-  return `${currency} $${price.toFixed(2)}`
-}
-
-function monogram(product: ProductSummary): string {
-  const source = product.team?.name ?? product.game.name
-  if (!source.includes(' ') && source.length <= 3) {
-    return source.toUpperCase()
-  }
-  return source
-    .split(/\s+/)
-    .map((word) => word[0])
-    .join('')
-    .slice(0, 3)
-    .toUpperCase()
-}
 
 export function ProductCard({ product }: { product: ProductSummary }) {
   return (
-    <article
-      aria-label={product.name}
-      className="group flex flex-col overflow-hidden border border-line bg-surface transition-colors hover:border-zinc-600"
+    <Link
+      to={`/producto/${product.slug}`}
+      className="group flex flex-col overflow-hidden border border-line bg-surface transition-colors hover:border-zinc-600 focus-visible:border-zinc-400 focus-visible:outline-none"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-surface-2">
         <div
@@ -53,7 +39,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           aria-hidden
           className="font-display absolute inset-0 flex items-center justify-center text-6xl text-white/[0.08] transition-transform duration-500 group-hover:scale-105 sm:text-7xl"
         >
-          {monogram(product)}
+          {monogram(product.team?.name, product.game.name)}
         </span>
         <span className="absolute inset-x-4 bottom-4 text-[10px] tracking-[0.2em] text-zinc-500 uppercase">
           Imagen en preparación
@@ -65,13 +51,19 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           {product.category.name}
           {product.team ? ` · ${product.team.name}` : ''}
         </p>
-        <h3 className="text-sm leading-snug font-semibold">{product.name}</h3>
-        <p className="mt-auto pt-2">
+        <h3 className="text-sm leading-snug font-semibold group-hover:underline group-hover:underline-offset-4">
+          {product.name}
+        </h3>
+        <p className="mt-auto flex items-end justify-between gap-3 pt-2">
           <span className="font-display text-lg">
             {formatPrice(product.price, product.currency)}
           </span>
+          <span className="text-[10px] font-semibold tracking-[0.18em] text-zinc-500 uppercase transition-colors group-hover:text-zinc-300">
+            Ver detalle
+            <span aria-hidden> →</span>
+          </span>
         </p>
       </div>
-    </article>
+    </Link>
   )
 }

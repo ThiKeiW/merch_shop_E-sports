@@ -2,7 +2,7 @@ import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 
 import { AdminPage } from '@/features/admin'
 import { LoginPage, RegisterPage, RequireRole, useAuthStore, useSession } from '@/features/auth'
-import { CatalogPage, HomePage } from '@/features/catalog'
+import { CatalogPage, HomePage, ProductDetailPage } from '@/features/catalog'
 
 function NotFound() {
   return (
@@ -78,6 +78,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/catalogo" element={<CatalogPage />} />
+          <Route path="/producto/:slug" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route

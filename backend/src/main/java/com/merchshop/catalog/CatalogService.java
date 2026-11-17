@@ -15,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.merchshop.catalog.dto.CatalogFacetsResponse;
 import com.merchshop.catalog.dto.CategoryResponse;
 import com.merchshop.catalog.dto.GameResponse;
+import com.merchshop.catalog.dto.ProductDetailResponse;
 import com.merchshop.catalog.dto.ProductPageResponse;
 import com.merchshop.catalog.dto.ProductSummaryResponse;
 import com.merchshop.catalog.dto.TeamResponse;
+import com.merchshop.common.ApiException;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -33,15 +35,21 @@ public class CatalogService {
     private static final int MAX_SIZE = 48;
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
+    private final ProductImageRepository imageRepository;
     private final GameRepository gameRepository;
     private final TeamRepository teamRepository;
     private final CategoryRepository categoryRepository;
 
     public CatalogService(ProductRepository productRepository,
+                          ProductVariantRepository variantRepository,
+                          ProductImageRepository imageRepository,
                           GameRepository gameRepository,
                           TeamRepository teamRepository,
                           CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
+        this.imageRepository = imageRepository;
         this.gameRepository = gameRepository;
         this.teamRepository = teamRepository;
         this.categoryRepository = categoryRepository;
@@ -75,6 +83,16 @@ public class CatalogService {
                 result.getSize(),
                 result.getTotalElements(),
                 result.getTotalPages());
+    }
+
+    public ProductDetailResponse product(String slug) {
+        Product product = productRepository.findBySlugAndActiveTrue(slug)
+                .orElseThrow(() -> ApiException.notFound("Producto no encontrado"));
+
+        return ProductDetailResponse.from(
+                product,
+                variantRepository.findByProductIdOrderBySizeAscColorAsc(product.getId()),
+                imageRepository.findByProductIdOrderByPrimaryDescIdAsc(product.getId()));
     }
 
     private static Specification<Product> specification(CatalogFilters filters) {
