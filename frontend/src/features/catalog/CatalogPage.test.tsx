@@ -85,6 +85,10 @@ describe('CatalogPage', () => {
     expect(screen.getByText('USD $29.99')).toBeInTheDocument()
     expect(screen.getByText('Imagen en preparación')).toBeInTheDocument()
     expect(container.querySelector('img')).toBeNull()
+    expect(screen.getByRole('link', { name: /Mousepad Sentinels Vandal/ })).toHaveAttribute(
+      'href',
+      '/producto/mousepad-sentinels-vandal',
+    )
 
     const urls = requestedUrls(fetchMock)
     expect(urls.some((url) => url.includes('/catalog/products') && url.includes('game=valorant'))).toBe(true)
