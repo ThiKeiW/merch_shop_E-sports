@@ -2,6 +2,7 @@ package com.merchshop.catalog.dto;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import com.merchshop.catalog.Product;
 
@@ -13,11 +14,12 @@ public record ProductSummaryResponse(
         BigDecimal price,
         String currency,
         boolean featured,
+        String imageUrl,
         GameResponse game,
         CategoryResponse category,
         TeamResponse team) {
 
-    public static ProductSummaryResponse from(Product product) {
+    public static ProductSummaryResponse from(Product product, String imageUrl) {
         return new ProductSummaryResponse(
                 product.getId(),
                 product.getSlug(),
@@ -26,12 +28,15 @@ public record ProductSummaryResponse(
                 product.getPrice(),
                 product.getCurrency(),
                 product.isFeatured(),
+                imageUrl,
                 GameResponse.from(product.getGame()),
                 CategoryResponse.from(product.getCategory()),
                 product.getTeam() == null ? null : TeamResponse.from(product.getTeam()));
     }
 
-    public static List<ProductSummaryResponse> from(List<Product> products) {
-        return products.stream().map(ProductSummaryResponse::from).toList();
+    public static List<ProductSummaryResponse> from(List<Product> products, Map<Long, String> imageByProduct) {
+        return products.stream()
+                .map(product -> from(product, imageByProduct.get(product.getId())))
+                .toList();
     }
 }

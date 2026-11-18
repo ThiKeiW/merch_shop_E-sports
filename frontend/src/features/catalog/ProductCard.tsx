@@ -4,26 +4,50 @@ import { formatPrice, monogram } from './format'
 import type { ProductSummary } from './types'
 
 export function ProductCard({ product }: { product: ProductSummary }) {
+  const image = product.imageUrl
+  const renderable = Boolean(image && (image.startsWith('http') || image.startsWith('/')))
+
   return (
     <Link
       to={`/producto/${product.slug}`}
       className="group flex flex-col overflow-hidden border border-line bg-surface transition-colors hover:border-zinc-600 focus-visible:border-zinc-400 focus-visible:outline-none"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-surface-2">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(150deg, ${product.game.accentColor}38 0%, ${product.game.accentColor}0d 45%, transparent 72%)`,
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(135deg, #ffffff 0 1px, transparent 1px 16px)',
-          }}
-        />
+        {renderable && image ? (
+          <img
+            src={image}
+            alt={product.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(150deg, ${product.game.accentColor}38 0%, ${product.game.accentColor}0d 45%, transparent 72%)`,
+              }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 opacity-[0.05]"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(135deg, #ffffff 0 1px, transparent 1px 16px)',
+              }}
+            />
+            <span
+              aria-hidden
+              className="font-display absolute inset-0 flex items-center justify-center text-6xl text-white/[0.08] transition-transform duration-500 group-hover:scale-105 sm:text-7xl"
+            >
+              {monogram(product.team?.name, product.game.name)}
+            </span>
+            <span className="absolute inset-x-4 bottom-4 text-[10px] tracking-[0.2em] text-zinc-500 uppercase">
+              Imagen en preparación
+            </span>
+          </>
+        )}
         <span
           className="absolute top-4 left-4 text-[10px] font-semibold tracking-[0.22em] uppercase"
           style={{ color: product.game.accentColor }}
@@ -35,15 +59,6 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             Destacado
           </span>
         ) : null}
-        <span
-          aria-hidden
-          className="font-display absolute inset-0 flex items-center justify-center text-6xl text-white/[0.08] transition-transform duration-500 group-hover:scale-105 sm:text-7xl"
-        >
-          {monogram(product.team?.name, product.game.name)}
-        </span>
-        <span className="absolute inset-x-4 bottom-4 text-[10px] tracking-[0.2em] text-zinc-500 uppercase">
-          Imagen en preparación
-        </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 border-t border-line p-4">
