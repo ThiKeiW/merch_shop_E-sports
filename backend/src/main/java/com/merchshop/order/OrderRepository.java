@@ -17,6 +17,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    java.util.Optional<Order> findByStripePaymentIntentId(String paymentIntentId);
+
     @Query("select o from Order o where o.status = :status and o.reservationExpiresAt < :now " +
             "order by o.reservationExpiresAt asc")
     List<Order> findExpired(@Param("status") OrderStatus status,
@@ -30,4 +32,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("expired") OrderStatus expired,
                         @Param("pending") OrderStatus pending,
                         @Param("now") Instant now);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Order o set o.status = :target, o.updatedAt = :now " +
+            "where o.id = :id and o.status = :expected")
+    int transitionIfStatus(@Param("id") Long id,
+                           @Param("expected") OrderStatus expected,
+                           @Param("target") OrderStatus target,
+                           @Param("now") Instant now);
 }

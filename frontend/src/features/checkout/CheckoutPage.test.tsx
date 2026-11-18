@@ -44,7 +44,7 @@ function renderCheckout() {
       <MemoryRouter initialEntries={['/checkout']}>
         <Routes>
           <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/pedidos/:code" element={<p>Pedido creado</p>} />
+          <Route path="/pagar/:code" element={<p>Pago del pedido</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -63,7 +63,7 @@ describe('CheckoutPage', () => {
     useAuthStore.setState({ token: null, user: null })
   })
 
-  it('crea el pedido con las líneas del carrito, lo vacía y navega al detalle', async () => {
+  it('crea el pedido con las líneas del carrito, lo vacía y navega al pago', async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => ({
       ok: true,
       status: 201,
@@ -89,7 +89,7 @@ describe('CheckoutPage', () => {
     expect(screen.getAllByText('EUR $129.98')).toHaveLength(2)
     await ui.click(screen.getByRole('button', { name: 'Confirmar pedido' }))
 
-    expect(await screen.findByText('Pedido creado')).toBeInTheDocument()
+    expect(await screen.findByText('Pago del pedido')).toBeInTheDocument()
     const [url, init] = fetchMock.mock.calls[0]
     expect(String(url)).toBe('/api/orders')
     expect(JSON.parse(String(init?.body))).toEqual({

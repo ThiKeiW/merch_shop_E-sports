@@ -13,6 +13,7 @@ import { CartPage, selectCartCount, useCartStore } from '@/features/cart'
 import { CatalogPage, HomePage, ProductDetailPage } from '@/features/catalog'
 import { CheckoutPage } from '@/features/checkout'
 import { OrderDetailPage, OrdersPage } from '@/features/orders'
+import { PaymentPage } from '@/features/payment'
 
 function NotFound() {
   return (
@@ -115,6 +116,14 @@ export default function App() {
             }
           />
           <Route
+            path="/pagar/:code"
+            element={
+              <RequireAuth>
+                <PaymentPage />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/pedidos/:code"
             element={
               <RequireAuth>
@@ -160,8 +169,8 @@ export default function App() {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>Proyecto académico y demostrativo. Sin envíos ni cobros reales.</p>
-          <p className="tracking-[0.18em] uppercase">Fase 5 — Carrito y pedidos</p>
+          <p>Proyecto académico y demostrativo. Pagos en modo de prueba.</p>
+          <p className="tracking-[0.18em] uppercase">Fase 6 — Pagos con Stripe</p>
         </div>
       </footer>
     </div>

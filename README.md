@@ -122,7 +122,16 @@ docker compose exec mysql mysql -umerch -pmerchpass merch_shop -e "SHOW TABLES;"
 - `POST /api/orders` recibe `{ items: [{ variantId, quantity }] }`, valida autenticación, variantes activas y stock, congela nombre/precio/imagen en `order_items` y descuenta stock de forma atómica (`stock >= quantity`).
 - Cada pedido se crea como `PENDING` con `reservation_expires_at` (15 min por defecto, configurable con `ORDER_RESERVATION_TTL`); el scheduler `ORDER_EXPIRATION_SWEEP_MS` restaura el stock de reservas vencidas y `POST /api/orders/{code}/cancel` permite cancelar explícitamente. Ambas operaciones son idempotentes.
 - `GET /api/orders` y `GET /api/orders/{code}` solo devuelven pedidos del usuario autenticado; los códigos ajenos responden 404.
-- La UI protege `/checkout`, `/pedidos` y `/pedidos/:code`; al confirmar, el carrito se vacía y se navega al detalle. El cobro con Stripe llega en la Fase 6.
+- La UI protege `/checkout`, `/pedidos` y `/pedidos/:code`; al confirmar, el carrito se vacía y se navega al pago.
+
+## Pagos con Stripe (Fase 6)
+
+- `POST /api/payments/intent` crea (o recupera) un `PaymentIntent` de Stripe para un pedido `PENDING` del usuario autenticado y devuelve `clientSecret` junto con la `publishableKey` configurada en el backend.
+- La UI usa **Payment Element** embebido en `/pagar/:code`; no se usa Stripe Checkout hosted. La confirmación se hace con `redirect: 'if_required'` y luego se vuelve a `/pedidos/:code`.
+- `POST /api/webhooks/stripe` es público, valida la firma con `STRIPE_WEBHOOK_SECRET` sobre el body crudo y registra cada `event_id` en `webhook_events` antes de procesarlo de forma asíncrona; los duplicados se ignoran.
+- Los eventos gestionados son `payment_intent.succeeded` (`PENDING → PAID`, o reembolso si el pedido ya expiró/falló), `payment_intent.payment_failed` y `payment_intent.canceled` (`PENDING → FAILED` con restauración de stock), y `charge.refunded` (`PAID → REFUNDED`).
+- Al expirar o cancelar un pedido con intent creado, se intenta cancelar también el `PaymentIntent` en Stripe.
+- Configura `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` y `STRIPE_WEBHOOK_SECRET` en `.env`; Compose los pasa al backend. Sin claves los endpoints de pago responden `503` y la pantalla de pago avisa que Stripe no está configurado.
 
 ## Desarrollo local sin Docker
 
@@ -192,7 +201,7 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 | 3 | Catálogo: API y vista con filtros acumulativos, detalle de producto, home en rayo y catálogo real de 40 productos | Hecha |
 | 4 | Admin (productos, stock, pedidos) + scraper | Hecha |
 | 5 | Carrito localStorage y pedidos con reserva de stock | Hecha |
-| 6 | Stripe Payment Element y webhooks idempotentes | Pendiente |
+| 6 | Stripe Payment Element y webhooks idempotentes | Hecha |
 | 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Pendiente |
 | 8 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
 | 9 | Despliegue en Azure | Pendiente |

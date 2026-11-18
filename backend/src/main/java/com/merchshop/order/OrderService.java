@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import com.merchshop.catalog.ProductRepository;
 import com.merchshop.catalog.ProductVariant;
 import com.merchshop.catalog.ProductVariantRepository;
 import com.merchshop.common.ApiException;
+import com.merchshop.payment.StripeGateway;
 import com.merchshop.order.dto.CreateOrderItemRequest;
 import com.merchshop.order.dto.CreateOrderRequest;
 import com.merchshop.order.dto.OrderResponse;
@@ -33,6 +36,7 @@ import com.merchshop.security.AuthenticatedUser;
 @Transactional(readOnly = true)
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private static final int MAX_LINES = 50;
     private static final int MAX_QUANTITY = 100;
     private static final int EXPIRATION_BATCH = 100;
@@ -42,21 +46,24 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
     private final ProductImageRepository imageRepository;
+    private final StripeGateway stripeGateway;
     private final java.time.Duration reservationTtl;
     private final BigDecimal shippingCost;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         ProductRepository productRepository,
-                        ProductVariantRepository variantRepository,
-                        ProductImageRepository imageRepository,
-                        @Value("${app.orders.reservation-ttl:PT15M}") java.time.Duration reservationTtl,
+                         ProductVariantRepository variantRepository,
+                         ProductImageRepository imageRepository,
+                         StripeGateway stripeGateway,
+                         @Value("${app.orders.reservation-ttl:PT15M}") java.time.Duration reservationTtl,
                         @Value("${app.orders.shipping-cost:0.00}") BigDecimal shippingCost) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.variantRepository = variantRepository;
         this.imageRepository = imageRepository;
+        this.stripeGateway = stripeGateway;
         this.reservationTtl = reservationTtl;
         this.shippingCost = shippingCost.setScale(2, RoundingMode.HALF_UP);
     }
@@ -192,6 +199,15 @@ public class OrderService {
     }
 
     @Transactional
+    public void markFailedAndRelease(Long orderId) {
+        int changed = orderRepository.transitionIfStatus(
+                orderId, OrderStatus.PENDING, OrderStatus.FAILED, Instant.now());
+        if (changed > 0) {
+            restoreItems(orderId);
+        }
+    }
+
+    @Transactional
     public void expireDueReservations() {
         List<Order> due = orderRepository.findExpired(
                 OrderStatus.PENDING, Instant.now(), PageRequest.of(0, EXPIRATION_BATCH));
@@ -204,11 +220,25 @@ public class OrderService {
     }
 
     private void release(Long orderId) {
+        String intentId = orderRepository.findById(orderId)
+                .map(Order::getStripePaymentIntentId)
+                .orElse(null);
         int changed = orderRepository.expireIfPending(
                 orderId, OrderStatus.EXPIRED, OrderStatus.PENDING, Instant.now());
         if (changed == 0) {
             return;
         }
+        restoreItems(orderId);
+        if (intentId != null && !intentId.isBlank()) {
+            try {
+                stripeGateway.cancelIntent(intentId);
+            } catch (RuntimeException exception) {
+                log.warn("No se pudo cancelar el intent {} del pedido {}", intentId, orderId, exception);
+            }
+        }
+    }
+
+    private void restoreItems(Long orderId) {
         orderItemRepository.findByOrderIdOrderByIdAsc(orderId).stream()
                 .filter(item -> item.getVariantId() != null)
                 .sorted((left, right) -> Long.compare(left.getVariantId(), right.getVariantId()))

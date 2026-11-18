@@ -23,7 +23,7 @@ export function CheckoutPage() {
       }),
     onSuccess: (order) => {
       clear()
-      navigate(`/pedidos/${order.code}`)
+      navigate(`/pagar/${order.code}`)
     },
     onError: (error: unknown) => {
       setErrorMessage(
@@ -84,7 +84,7 @@ export function CheckoutPage() {
               </span>
             </div>
             <p className="mt-2 text-[11px] text-zinc-500">
-              Al confirmar se reserva el stock durante 15 minutos. El pago se habilita en la Fase 6.
+              Al confirmar se reserva el stock durante 15 minutos. Continuarás al pago seguro.
             </p>
 
             {errorMessage ? (

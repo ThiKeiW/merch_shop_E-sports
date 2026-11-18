@@ -20,7 +20,8 @@ src/
 │  ├─ auth/       Fase 2: login, registro, Google OAuth, JWT
 │  ├─ catalog/    Fase 3: home en rayo, listado y detalle con filtros
 │  ├─ cart/       Fase 5: carrito persistente en localStorage
-│  ├─ checkout/   Fase 5: confirmación del pedido (Stripe en Fase 6)
+│  ├─ checkout/   Fase 5: confirmación del pedido
+│  ├─ payment/    Fase 6: Payment Element y confirmación del PaymentIntent
 │  ├─ orders/     Fase 5: historial, detalle y cancelación
 │  └─ admin/      Fase 4: productos y stock; pedidos en Fase 5
 ├─ shared/

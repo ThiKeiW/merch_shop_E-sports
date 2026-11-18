@@ -64,14 +64,22 @@ export function OrderDetailPage() {
               </div>
             ) : null}
             {query.data.status === 'PENDING' ? (
-              <button
-                type="button"
-                disabled={cancel.isPending}
-                onClick={() => cancel.mutate()}
-                className="border border-line px-5 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-red-400 hover:text-red-300 disabled:opacity-50"
-              >
-                Cancelar pedido
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to={`/pagar/${code}`}
+                  className="border border-white bg-white px-5 py-2 text-[11px] font-bold tracking-[0.16em] text-ink uppercase"
+                >
+                  Pagar ahora
+                </Link>
+                <button
+                  type="button"
+                  disabled={cancel.isPending}
+                  onClick={() => cancel.mutate()}
+                  className="border border-line px-5 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-red-400 hover:text-red-300 disabled:opacity-50"
+                >
+                  Cancelar pedido
+                </button>
+              </div>
             ) : null}
           </div>
 
@@ -118,7 +126,7 @@ export function OrderDetailPage() {
             </div>
           </dl>
           <p className="text-[11px] text-zinc-500">
-            El cobro con tarjeta se habilitará en la siguiente fase. La reserva se libera al expirar.
+            El cobro con tarjeta se procesa de forma segura con Stripe. La reserva se libera al expirar.
           </p>
         </div>
       ) : null}
