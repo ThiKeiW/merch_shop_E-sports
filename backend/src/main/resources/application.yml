@@ -57,6 +57,10 @@ app:
       ttl: ${JWT_TTL:PT24H}
     google:
       client-id: ${GOOGLE_CLIENT_ID:}
+  orders:
+    reservation-ttl: ${ORDER_RESERVATION_TTL:PT15M}
+    expiration-sweep-ms: ${ORDER_EXPIRATION_SWEEP_MS:60000}
+    shipping-cost: ${ORDER_SHIPPING_COST:0.00}
   async:
     mail:
       core-pool-size: 2

@@ -1,8 +1,18 @@
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 
 import { AdminPage, AdminProductFormPage, AdminProductsPage } from '@/features/admin'
-import { LoginPage, RegisterPage, RequireRole, useAuthStore, useSession } from '@/features/auth'
+import {
+  LoginPage,
+  RegisterPage,
+  RequireAuth,
+  RequireRole,
+  useAuthStore,
+  useSession,
+} from '@/features/auth'
+import { CartPage, selectCartCount, useCartStore } from '@/features/cart'
 import { CatalogPage, HomePage, ProductDetailPage } from '@/features/catalog'
+import { CheckoutPage } from '@/features/checkout'
+import { OrderDetailPage, OrdersPage } from '@/features/orders'
 
 function NotFound() {
   return (
@@ -20,6 +30,7 @@ export default function App() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const clear = useAuthStore((state) => state.clear)
+  const cartCount = useCartStore(selectCartCount)
   useSession()
 
   return (
@@ -33,9 +44,14 @@ export default function App() {
             <Link to="/catalogo" className="transition-colors hover:text-white">
               Catálogo
             </Link>
-            <span className="hidden cursor-not-allowed text-zinc-600 sm:inline" title="Disponible en la Fase 5">
+            <Link to="/carrito" className="flex items-center gap-1.5 transition-colors hover:text-white">
               Carrito
-            </span>
+              {cartCount > 0 ? (
+                <span className="bg-white px-1.5 py-0.5 text-[10px] font-bold text-ink">
+                  {cartCount}
+                </span>
+              ) : null}
+            </Link>
             {user?.role === 'ADMIN' ? (
               <Link to="/admin" className="transition-colors hover:text-white">
                 Admin
@@ -81,6 +97,31 @@ export default function App() {
           <Route path="/producto/:slug" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
+          <Route path="/carrito" element={<CartPage />} />
+          <Route
+            path="/checkout"
+            element={
+              <RequireAuth>
+                <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/pedidos"
+            element={
+              <RequireAuth>
+                <OrdersPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/pedidos/:code"
+            element={
+              <RequireAuth>
+                <OrderDetailPage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/admin"
             element={
@@ -120,7 +161,7 @@ export default function App() {
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>Proyecto académico y demostrativo. Sin envíos ni cobros reales.</p>
-          <p className="tracking-[0.18em] uppercase">Fase 4 — Panel de administración</p>
+          <p className="tracking-[0.18em] uppercase">Fase 5 — Carrito y pedidos</p>
         </div>
       </footer>
     </div>

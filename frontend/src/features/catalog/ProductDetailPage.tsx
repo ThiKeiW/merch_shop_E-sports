@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { useCartStore } from '@/features/cart'
 import { ApiError } from '@/shared/api'
 
 import { fetchProduct } from './api'
@@ -65,6 +66,8 @@ function ProductVisual({ product }: { product: ProductDetail }) {
 
 function ProductDetailView({ product }: { product: ProductDetail }) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [addedVariantId, setAddedVariantId] = useState<number | null>(null)
+  const addToCart = useCartStore((state) => state.add)
   const selected =
     product.variants.find((variant) => variant.id === selectedId) ??
     product.variants.find((variant) => variant.available) ??
@@ -178,15 +181,39 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
 
           <button
             type="button"
-            disabled
-            title="El carrito llega en la Fase 5"
-            className="mt-8 h-12 border border-line px-6 text-[11px] font-semibold tracking-[0.2em] uppercase disabled:cursor-not-allowed disabled:text-zinc-500"
+            disabled={!selected?.available}
+            onClick={() => {
+              if (!selected || !selected.available) {
+                return
+              }
+              addToCart({
+                variantId: selected.id,
+                productId: product.id,
+                slug: product.slug,
+                name: product.name,
+                sku: selected.sku,
+                size: selected.size,
+                color: selected.color,
+                unitPrice: selected.finalPrice,
+                currency: product.currency,
+                imagePath: product.images[0]?.path ?? null,
+                stock: selected.stock,
+              })
+              setAddedVariantId(selected.id)
+            }}
+            className="mt-8 h-12 border border-line px-6 text-[11px] font-semibold tracking-[0.2em] uppercase transition-colors hover:border-zinc-500 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-500"
           >
             Añadir al carrito
           </button>
-          <p className="mt-3 text-[11px] text-zinc-500">
-            La compra se habilitará en la Fase 5. Por ahora puedes explorar variantes y stock.
-          </p>
+          {addedVariantId === selected?.id ? (
+            <p role="status" className="mt-3 text-[11px] text-emerald-300">
+              Añadido. <Link to="/carrito" className="underline underline-offset-4">Ver carrito</Link>
+            </p>
+          ) : (
+            <p className="mt-3 text-[11px] text-zinc-500">
+              El stock se valida de nuevo al confirmar el pedido.
+            </p>
+          )}
 
           <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-6 text-xs">
             <div>

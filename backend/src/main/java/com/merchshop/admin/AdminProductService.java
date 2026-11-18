@@ -41,6 +41,8 @@ import com.merchshop.catalog.SubcategoryRepository;
 import com.merchshop.catalog.Team;
 import com.merchshop.catalog.TeamRepository;
 import com.merchshop.common.ApiException;
+import com.merchshop.order.OrderItemRepository;
+import com.merchshop.order.OrderStatus;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -64,6 +66,7 @@ public class AdminProductService {
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
     private final TeamRepository teamRepository;
+    private final OrderItemRepository orderItemRepository;
 
     public AdminProductService(ProductRepository productRepository,
                                ProductVariantRepository variantRepository,
@@ -71,7 +74,8 @@ public class AdminProductService {
                                GameRepository gameRepository,
                                CategoryRepository categoryRepository,
                                SubcategoryRepository subcategoryRepository,
-                               TeamRepository teamRepository) {
+                               TeamRepository teamRepository,
+                               OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.variantRepository = variantRepository;
         this.imageRepository = imageRepository;
@@ -79,6 +83,7 @@ public class AdminProductService {
         this.categoryRepository = categoryRepository;
         this.subcategoryRepository = subcategoryRepository;
         this.teamRepository = teamRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     public AdminProductPageResponse list(String query, Boolean active, String game, String category,
@@ -176,8 +181,12 @@ public class AdminProductService {
         productRepository.save(product);
 
         Set<String> ownSkus = new HashSet<>();
-        variantRepository.findByProductIdOrderBySizeAscColorAsc(id)
-                .forEach(variant -> ownSkus.add(variant.getSku()));
+        for (ProductVariant variant : variantRepository.findByProductIdOrderBySizeAscColorAsc(id)) {
+            ownSkus.add(variant.getSku());
+            if (orderItemRepository.existsByVariantIdAndOrderStatus(variant.getId(), OrderStatus.PENDING)) {
+                throw ApiException.conflict("No se puede editar el producto mientras tenga reservas pendientes");
+            }
+        }
         variantRepository.deleteByProductId(id);
         variantRepository.flush();
         imageRepository.deleteByProductId(id);

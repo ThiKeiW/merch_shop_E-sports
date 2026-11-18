@@ -85,17 +85,17 @@ El backend verifica el ID token contra el JWKS de Google (`https://www.googleapi
 
 - **Backend:** `catalog/` con entidades de solo lectura y `JpaSpecificationExecutor`; la especificación compone predicados solo para los filtros presentes y `sort` acepta `relevance` (por defecto), `newest`, `price-asc`, `price-desc` y `name`. `size` se limita a 48.
 - **Facets:** el panel de equipos se recalcula con los juegos seleccionados (`GET /api/catalog/facets?game=...`); si un equipo deja de estar disponible, el frontend lo quita de la URL.
-- **Detalle:** cada tarjeta enlaza a `/producto/{slug}`, que muestra descripción, precio de la variante seleccionada (talla/color + `priceDelta`), stock y SKU. Las variantes agotadas quedan deshabilitadas y el producto inexistente responde con un estado 404 propio. El botón de compra queda deshabilitado hasta la Fase 5.
-- **Frontend:** `features/catalog` contiene `CatalogPage`, `ProductDetailPage`, `ProductCard`, `filters.ts` (parseo/serialización de la URL), `format.ts` y `api.ts`. Los productos aún no tienen imágenes: tarjeta y detalle muestran un placeholder con el color del juego y un monograma, y se reemplazará con las imágenes del scraper (Fase 4).
-- **Seed:** 12 productos de ejemplo repartidos entre los 4 juegos y las 3 categorías, con 15 variantes para probar stock y selección.
+- **Detalle:** cada tarjeta enlaza a `/producto/{slug}`, que muestra descripción, precio de la variante seleccionada (talla/color + `priceDelta`), stock y SKU. Las variantes agotadas quedan deshabilitadas y el producto inexistente responde con un estado 404 propio. El botón añade la variante al carrito; el stock se reserva al confirmar el pedido.
+- **Frontend:** `features/catalog` contiene `CatalogPage`, `ProductDetailPage`, `ProductCard`, `filters.ts` (parseo/serialización de la URL), `format.ts` y `api.ts`. Las tarjetas y el detalle muestran la imagen principal importada por el scraper, con placeholder de respaldo.
+- **Catálogo real:** `db/03-catalog.sql` carga 40 productos (18 Fnatic, 12 ESL, 10 Riot), 209 variantes y sus imágenes CARD. Precios ESL convertidos de PLN a EUR con factor `1 / 4.30`; stock sintético para que la reserva se pueda probar.
 
 
 ## Estructura
 
 ```
-backend/    Spring Boot: config, common (errores, health), auth, security (JWT), catalog, user, admin
-db/         01-schema.sql (DDL) y 02-seed.sql (datos), ambos idempotentes
-frontend/   SPA por funcionalidades: auth, catalog, cart, checkout, admin, shared
+backend/    Spring Boot: config, common (errores, health), auth, security (JWT), catalog, user, admin, order
+db/         01-schema.sql (DDL), 02-seed.sql (usuarios) y 03-catalog.sql (catálogo real), idempotentes
+frontend/   SPA por funcionalidades: auth, catalog, cart, checkout, orders, admin, shared
 .github/    CI: backend, frontend y validación de Compose
 ```
 
@@ -115,6 +115,14 @@ Para inspeccionar la base:
 ```bash
 docker compose exec mysql mysql -umerch -pmerchpass merch_shop -e "SHOW TABLES;"
 ```
+
+## Carrito y pedidos (Fase 5)
+
+- El carrito vive en `localStorage` (`merch:cart`) mediante Zustand: acumula cantidades por variante, respeta el `stock` conocido y ofrece `selectCartCount`/`selectCartSubtotal`.
+- `POST /api/orders` recibe `{ items: [{ variantId, quantity }] }`, valida autenticación, variantes activas y stock, congela nombre/precio/imagen en `order_items` y descuenta stock de forma atómica (`stock >= quantity`).
+- Cada pedido se crea como `PENDING` con `reservation_expires_at` (15 min por defecto, configurable con `ORDER_RESERVATION_TTL`); el scheduler `ORDER_EXPIRATION_SWEEP_MS` restaura el stock de reservas vencidas y `POST /api/orders/{code}/cancel` permite cancelar explícitamente. Ambas operaciones son idempotentes.
+- `GET /api/orders` y `GET /api/orders/{code}` solo devuelven pedidos del usuario autenticado; los códigos ajenos responden 404.
+- La UI protege `/checkout`, `/pedidos` y `/pedidos/:code`; al confirmar, el carrito se vacía y se navega al detalle. El cobro con Stripe llega en la Fase 6.
 
 ## Desarrollo local sin Docker
 
@@ -181,9 +189,9 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 |---|---|---|
 | 1 | Base: repos, Compose, SQL, CI, esqueletos | Hecha |
 | 2 | Auth JWT + Google OAuth + roles | Hecha |
-| 3 | Catálogo: API y vista con filtros acumulativos, detalle de producto, home en rayo y 12 productos de seed | Hecha |
-| 4 | Admin (productos, stock, pedidos) + scraper | Pendiente |
-| 5 | Carrito localStorage y pedidos con reserva de stock | Pendiente |
+| 3 | Catálogo: API y vista con filtros acumulativos, detalle de producto, home en rayo y catálogo real de 40 productos | Hecha |
+| 4 | Admin (productos, stock, pedidos) + scraper | Hecha |
+| 5 | Carrito localStorage y pedidos con reserva de stock | Hecha |
 | 6 | Stripe Payment Element y webhooks idempotentes | Pendiente |
 | 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Pendiente |
 | 8 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
@@ -195,4 +203,5 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 - Se usa **Spring Boot 4.1** (Java 21): es la rama estable actual de Spring Boot; los ejemplos de la versión 3.x pueden diferir en nombres de starters (`spring-boot-starter-webmvc`) y en la API de Spring Security.
 - **Spring Boot 4 usa Jackson 3** (`tools.jackson.databind`); las importaciones clásicas de `com.fasterxml.jackson` no están en el classpath.
 - La autenticación usa **JWT propio** (sin servidor de identidad externo) para mantener el proyecto autocontenido; el contrato está en `/api/auth/*`.
-- Los productos del seed aún no tienen imágenes: se generan con el scraper en la Fase 4; mientras tanto el catálogo usa placeholders.
+- Las imágenes del catálogo se importan en `db/03-catalog.sql` desde `/images/products`; el frontend usa placeholder solo si la ruta no existe.
+- El stock del carrito es orientativo: la reserva real se valida de nuevo contra MySQL al confirmar el pedido.
