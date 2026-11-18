@@ -38,3 +38,7 @@ desktop.ini
 # Docker / datos locales
 docker-data/
 storage/
+
+# Importador de catalogo (cache de red y build)
+tools/catalog-import/.cache/
+tools/catalog-import/target/
