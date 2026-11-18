@@ -1,6 +1,6 @@
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 
-import { AdminPage } from '@/features/admin'
+import { AdminPage, AdminProductFormPage, AdminProductsPage } from '@/features/admin'
 import { LoginPage, RegisterPage, RequireRole, useAuthStore, useSession } from '@/features/auth'
 import { CatalogPage, HomePage, ProductDetailPage } from '@/features/catalog'
 
@@ -89,6 +89,30 @@ export default function App() {
               </RequireRole>
             }
           />
+          <Route
+            path="/admin/productos"
+            element={
+              <RequireRole role="ADMIN">
+                <AdminProductsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/productos/nuevo"
+            element={
+              <RequireRole role="ADMIN">
+                <AdminProductFormPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/productos/:id"
+            element={
+              <RequireRole role="ADMIN">
+                <AdminProductFormPage />
+              </RequireRole>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
@@ -96,7 +120,7 @@ export default function App() {
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>Proyecto académico y demostrativo. Sin envíos ni cobros reales.</p>
-          <p className="tracking-[0.18em] uppercase">Fase 3 — Catálogo con filtros</p>
+          <p className="tracking-[0.18em] uppercase">Fase 4 — Panel de administración</p>
         </div>
       </footer>
     </div>

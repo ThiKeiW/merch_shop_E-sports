@@ -4,6 +4,8 @@ import { apiFetch } from '@/shared/api'
 
 import type { SessionUser } from '@/features/auth'
 
+import { AdminNav } from './AdminNav'
+
 function fetchUsers(): Promise<SessionUser[]> {
   return apiFetch<SessionUser[]>('/admin/users')
 }
@@ -14,14 +16,18 @@ export function AdminPage() {
   return (
     <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
       <p className="text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">Staff</p>
-      <h1 className="font-display mt-3 text-3xl tracking-tight uppercase">Usuarios</h1>
+      <h1 className="font-display mt-3 text-3xl tracking-tight uppercase">Administración</h1>
       <p className="mt-3 text-sm text-zinc-400">
-        Recurso protegido: solo un ADMIN puede leer esta lista desde la API.
+        Gestiona usuarios y el catálogo editable de la tienda.
       </p>
 
-      <div className="mt-8 border border-line bg-surface">
+      <div className="mt-8">
+        <AdminNav />
+      </div>
+
+      <div className="mt-6 border border-line bg-surface">
         <div className="flex items-center justify-between border-b border-line px-4 py-3 text-[11px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">
-          <span>Registrados</span>
+          <span>Usuarios registrados</span>
           <span>{query.data?.length ?? 0}</span>
         </div>
 
