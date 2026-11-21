@@ -26,6 +26,7 @@ import com.merchshop.catalog.ProductRepository;
 import com.merchshop.catalog.ProductVariant;
 import com.merchshop.catalog.ProductVariantRepository;
 import com.merchshop.common.ApiException;
+import com.merchshop.payment.PaymentService;
 import com.merchshop.payment.StripeGateway;
 import com.merchshop.order.dto.CreateOrderItemRequest;
 import com.merchshop.order.dto.CreateOrderRequest;
@@ -47,6 +48,7 @@ public class OrderService {
     private final ProductVariantRepository variantRepository;
     private final ProductImageRepository imageRepository;
     private final StripeGateway stripeGateway;
+    private final PaymentService paymentService;
     private final java.time.Duration reservationTtl;
     private final BigDecimal shippingCost;
 
@@ -56,6 +58,7 @@ public class OrderService {
                          ProductVariantRepository variantRepository,
                          ProductImageRepository imageRepository,
                          StripeGateway stripeGateway,
+                         PaymentService paymentService,
                          @Value("${app.orders.reservation-ttl:PT15M}") java.time.Duration reservationTtl,
                         @Value("${app.orders.shipping-cost:0.00}") BigDecimal shippingCost) {
         this.orderRepository = orderRepository;
@@ -64,6 +67,7 @@ public class OrderService {
         this.variantRepository = variantRepository;
         this.imageRepository = imageRepository;
         this.stripeGateway = stripeGateway;
+        this.paymentService = paymentService;
         this.reservationTtl = reservationTtl;
         this.shippingCost = shippingCost.setScale(2, RoundingMode.HALF_UP);
     }
@@ -211,7 +215,35 @@ public class OrderService {
     public void expireDueReservations() {
         List<Order> due = orderRepository.findExpired(
                 OrderStatus.PENDING, Instant.now(), PageRequest.of(0, EXPIRATION_BATCH));
-        due.forEach(order -> release(order.getId()));
+        due.forEach(order -> {
+            if (order.getStripePaymentIntentId() == null || order.getStripePaymentIntentId().isBlank()) {
+                release(order.getId());
+                return;
+            }
+            try {
+                String paymentStatus = paymentService.reconcile(order);
+                if ("succeeded".equals(paymentStatus)
+                        || "processing".equals(paymentStatus)
+                        || "requires_action".equals(paymentStatus)
+                        || "requires_capture".equals(paymentStatus)) {
+                    if (!"succeeded".equals(paymentStatus)) {
+                        postpone(order);
+                    }
+                    return;
+                }
+            } catch (RuntimeException exception) {
+                log.warn("No se pudo verificar el pago {} antes de expirar el pedido {}",
+                        order.getStripePaymentIntentId(), order.getId(), exception);
+                postpone(order);
+                return;
+            }
+            release(order.getId());
+        });
+    }
+
+    private void postpone(Order order) {
+        order.setReservationExpiresAt(Instant.now().plus(reservationTtl));
+        orderRepository.save(order);
     }
 
     private Order findOwned(String code, AuthenticatedUser buyer) {

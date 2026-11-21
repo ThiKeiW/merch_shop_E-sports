@@ -1,6 +1,7 @@
 package com.merchshop.payment;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,12 @@ public class PaymentController {
     public PaymentIntentResponse createIntent(@Valid @RequestBody PaymentIntentRequest request,
                                               @AuthenticationPrincipal AuthenticatedUser buyer) {
         return paymentService.createIntent(request.orderCode(), buyer);
+    }
+
+    @PostMapping("/{orderCode}/confirm")
+    public PaymentConfirmationResponse confirm(@PathVariable String orderCode,
+                                               @AuthenticationPrincipal AuthenticatedUser buyer) {
+        return paymentService.confirm(orderCode, buyer);
     }
 
     public record PaymentIntentRequest(@NotBlank String orderCode) {

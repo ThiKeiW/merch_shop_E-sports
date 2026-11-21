@@ -21,7 +21,7 @@ src/
 │  ├─ catalog/    Fase 3: home en rayo, listado y detalle con filtros
 │  ├─ cart/       Fase 5: carrito persistente en localStorage
 │  ├─ checkout/   Fase 5: confirmación del pedido
-│  ├─ payment/    Fase 6: Payment Element y confirmación del PaymentIntent
+│  ├─ payment/    Fase 6: Payment Element, reconciliación e invalidación del catálogo
 │  ├─ orders/     Fase 5: historial, detalle y cancelación
 │  └─ admin/      Fase 4: productos y stock; pedidos en Fase 5
 ├─ shared/

@@ -56,7 +56,7 @@ Los **equipos** son una dimensión aparte (T1, G2, Fnatic, etc.), ligada a un ju
 
 **Stock bajo concurrencia (lo más delicado con 1000 usuarios):** descuento atómico `UPDATE product_variants SET stock = stock - :qty WHERE id = :id AND stock >= :qty` (0 filas afectadas = sin stock). Se reserva al crear el pedido `PENDING` con expiración (por ejemplo 15 min) y un job programado libera las reservas vencidas.
 
-**Stripe:** el backend crea el `PaymentIntent` con el total calculado en el servidor, y el front monta el Payment Element junto al resumen del carrito. Los webhooks (`payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`) verifican la firma, son **idempotentes** (tabla `webhook_events` con el id del evento) y mueven el pedido entre `PENDING → PAID / FAILED / REFUNDED`.
+**Stripe:** el backend crea el `PaymentIntent` con el total calculado en el servidor, y el front monta el Payment Element junto al resumen del carrito. Los webhooks (`payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`) verifican la firma, son **idempotentes** (tabla `webhook_events` con el id del evento) y mueven el pedido entre `PENDING → PAID / FAILED / REFUNDED`. Como respaldo si el webhook no llega, el front reconcilia el `PaymentIntent` al volver del pago y el scheduler consulta Stripe antes de expirar una reserva.
 
 **Multihilo con `@Async`:** `ThreadPoolTaskExecutor` configurado (core, max, cola acotada y política de rechazo controlada), con ejecutores separados para correos y webhooks. Se responde 200 a Stripe rápido y se procesa en segundo plano, con reintentos para los correos.
 

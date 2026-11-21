@@ -4,7 +4,7 @@ import type { FormEvent } from 'react'
 
 type Props = {
   orderCode: string
-  onPaid: () => void
+  onPaid: (paymentStatus: string) => Promise<void> | void
 }
 
 export function PaymentForm({ orderCode, onPaid }: Props) {
@@ -20,7 +20,7 @@ export function PaymentForm({ orderCode, onPaid }: Props) {
     }
     setProcessing(true)
     setErrorMessage(null)
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       redirect: 'if_required',
       confirmParams: {
@@ -32,7 +32,11 @@ export function PaymentForm({ orderCode, onPaid }: Props) {
       setErrorMessage(error.message ?? 'No pudimos procesar el pago.')
       return
     }
-    onPaid()
+    try {
+      await onPaid(paymentIntent?.status ?? 'unknown')
+    } catch {
+      setErrorMessage('El pago se realizó, pero no pudimos actualizar el pedido. Consulta Mis pedidos.')
+    }
   }
 
   return (

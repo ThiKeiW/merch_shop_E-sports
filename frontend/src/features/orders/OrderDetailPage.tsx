@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { formatPrice } from '@/features/catalog/format'
+import { confirmPayment } from '@/features/payment/api'
 
 import { cancelOrder, fetchOrder } from './api'
 import type { OrderStatus } from './types'
@@ -16,7 +18,17 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 
 export function OrderDetailPage() {
   const { code = '' } = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
+  const checkedIntent = useRef(false)
+  const pollCount = useRef(0)
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(() => {
+    const state = location.state as { paymentStatus?: string } | null
+    return state?.paymentStatus ?? null
+  })
+
   const query = useQuery({
     queryKey: ['orders', code],
     queryFn: () => fetchOrder(code),
@@ -25,10 +37,52 @@ export function OrderDetailPage() {
   const cancel = useMutation({
     mutationFn: () => cancelOrder(code),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
-      queryClient.invalidateQueries({ queryKey: ['orders', code] })
+      void queryClient.invalidateQueries({ queryKey: ['orders'] })
+      void queryClient.invalidateQueries({ queryKey: ['orders', code] })
+      void queryClient.invalidateQueries({ queryKey: ['catalog'] })
     },
   })
+  const confirm = useMutation({
+    mutationFn: () => confirmPayment(code),
+    onSuccess: (result) => {
+      setPaymentStatus(result.paymentStatus)
+      void queryClient.invalidateQueries({ queryKey: ['orders'] })
+      void queryClient.invalidateQueries({ queryKey: ['orders', code] })
+      void queryClient.invalidateQueries({ queryKey: ['catalog'] })
+      if (searchParams.has('payment_intent') || searchParams.has('payment_intent_client_secret')) {
+        navigate(`/pedidos/${code}`, {
+          replace: true,
+          state: { paymentStatus: result.paymentStatus },
+        })
+      }
+    },
+  })
+  const confirmMutate = confirm.mutate
+
+  const hasStripeReturn =
+    searchParams.has('payment_intent') || searchParams.has('payment_intent_client_secret')
+  const processingPayment = paymentStatus === 'processing'
+  const paidButPending = paymentStatus === 'succeeded' && query.data?.status === 'PENDING'
+
+  useEffect(() => {
+    if (checkedIntent.current || query.data?.status !== 'PENDING') {
+      return
+    }
+    if (!query.data.stripePaymentIntentId && !hasStripeReturn) {
+      return
+    }
+    checkedIntent.current = true
+    confirmMutate()
+  }, [query.data, hasStripeReturn, confirmMutate])
+
+  useEffect(() => {
+    if (paymentStatus !== 'processing' || query.data?.status !== 'PENDING' || pollCount.current >= 15) {
+      return
+    }
+    pollCount.current += 1
+    const timer = window.setTimeout(() => confirmMutate(), 4000)
+    return () => window.clearTimeout(timer)
+  }, [paymentStatus, query.data?.status, confirmMutate])
 
   return (
     <section className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6">
@@ -65,17 +119,27 @@ export function OrderDetailPage() {
             ) : null}
             {query.data.status === 'PENDING' ? (
               <div className="flex flex-wrap gap-3">
-                <Link
-                  to={`/pagar/${code}`}
-                  className="border border-white bg-white px-5 py-2 text-[11px] font-bold tracking-[0.16em] text-ink uppercase"
-                >
-                  Pagar ahora
-                </Link>
                 <button
                   type="button"
-                  disabled={cancel.isPending}
+                  disabled={confirm.isPending || processingPayment || paidButPending}
+                  onClick={() => confirmMutate()}
+                  className="border border-line px-5 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {confirm.isPending ? 'Comprobando…' : 'Actualizar estado del pago'}
+                </button>
+                {!processingPayment && !paidButPending ? (
+                  <Link
+                    to={`/pagar/${code}`}
+                    className="border border-white bg-white px-5 py-2 text-[11px] font-bold tracking-[0.16em] text-ink uppercase"
+                  >
+                    Pagar ahora
+                  </Link>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={cancel.isPending || processingPayment || paidButPending}
                   onClick={() => cancel.mutate()}
-                  className="border border-line px-5 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-red-400 hover:text-red-300 disabled:opacity-50"
+                  className="border border-line px-5 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-red-400 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancelar pedido
                 </button>
@@ -83,6 +147,22 @@ export function OrderDetailPage() {
             ) : null}
           </div>
 
+          {processingPayment ? (
+            <p role="status" className="border border-line bg-surface p-4 text-sm text-zinc-300">
+              El pago está en proceso. Estamos esperando la confirmación de Stripe; no vuelvas a
+              introducir los datos de la tarjeta.
+            </p>
+          ) : null}
+          {paidButPending ? (
+            <p role="status" className="border border-line bg-surface p-4 text-sm text-zinc-300">
+              Stripe ya confirmó el pago. Actualizando el pedido…
+            </p>
+          ) : null}
+          {confirm.isError ? (
+            <p role="alert" className="text-sm text-red-300">
+              No pudimos comprobar el estado del pago. Puedes volver a intentarlo.
+            </p>
+          ) : null}
           {cancel.isError ? (
             <p role="alert" className="text-sm text-red-300">
               No se pudo cancelar el pedido. Puede que ya haya expirado.

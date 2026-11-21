@@ -13,8 +13,7 @@ import com.merchshop.order.Order;
 import com.merchshop.order.OrderRepository;
 import com.merchshop.order.OrderService;
 import com.merchshop.order.OrderStatus;
-import com.merchshop.payment.Payment;
-import com.merchshop.payment.PaymentRepository;
+import com.merchshop.payment.PaymentService;
 import com.merchshop.payment.StripeGateway;
 import com.merchshop.payment.StripeWebhookEvent;
 
@@ -24,23 +23,22 @@ import tools.jackson.databind.JsonNode;
 public class WebhookProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(WebhookProcessor.class);
-    private static final String PROVIDER = "stripe";
 
     private final WebhookEventRepository webhookEventRepository;
     private final OrderRepository orderRepository;
     private final OrderService orderService;
-    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
     private final StripeGateway stripeGateway;
 
     public WebhookProcessor(WebhookEventRepository webhookEventRepository,
                             OrderRepository orderRepository,
                             OrderService orderService,
-                            PaymentRepository paymentRepository,
+                            PaymentService paymentService,
                             StripeGateway stripeGateway) {
         this.webhookEventRepository = webhookEventRepository;
         this.orderRepository = orderRepository;
         this.orderService = orderService;
-        this.paymentRepository = paymentRepository;
+        this.paymentService = paymentService;
         this.stripeGateway = stripeGateway;
     }
 
@@ -69,16 +67,12 @@ public class WebhookProcessor {
         }
         Order order = found.get();
         if (order.getStatus() == OrderStatus.PENDING) {
-            int changed = orderRepository.transitionIfStatus(
-                    order.getId(), OrderStatus.PENDING, OrderStatus.PAID, Instant.now());
-            if (changed > 0) {
-                upsertPayment(order, intentId, "succeeded");
-            }
+            paymentService.markSucceeded(order, intentId);
         } else if (order.getStatus() == OrderStatus.EXPIRED || order.getStatus() == OrderStatus.FAILED) {
             stripeGateway.refund(intentId);
             orderRepository.transitionIfStatus(
                     order.getId(), order.getStatus(), OrderStatus.REFUNDED, Instant.now());
-            upsertPayment(order, intentId, "refunded");
+            paymentService.recordStatus(order, intentId, "refunded");
         }
     }
 
@@ -91,7 +85,7 @@ public class WebhookProcessor {
         Order order = found.get();
         if (order.getStatus() == OrderStatus.PENDING) {
             orderService.markFailedAndRelease(order.getId());
-            upsertPayment(order, intentId, "failed");
+            paymentService.recordStatus(order, intentId, "failed");
         }
     }
 
@@ -107,7 +101,7 @@ public class WebhookProcessor {
         Order order = found.get();
         orderRepository.transitionIfStatus(
                 order.getId(), OrderStatus.PAID, OrderStatus.REFUNDED, Instant.now());
-        upsertPayment(order, intentId, "refunded");
+        paymentService.recordStatus(order, intentId, "refunded");
     }
 
     private Optional<Order> findOrder(StripeWebhookEvent event) {
@@ -131,19 +125,5 @@ public class WebhookProcessor {
             return id;
         }
         return object.path("payment_intent").asText("");
-    }
-
-    private void upsertPayment(Order order, String intentId, String status) {
-        Payment payment = paymentRepository.findByProviderAndProviderPaymentId(PROVIDER, intentId)
-                .orElseGet(Payment::new);
-        if (payment.getId() == null) {
-            payment.setOrderId(order.getId());
-            payment.setProvider(PROVIDER);
-            payment.setProviderPaymentId(intentId);
-            payment.setAmount(order.getTotal());
-            payment.setCurrency(order.getCurrency());
-        }
-        payment.setStatus(status);
-        paymentRepository.save(payment);
     }
 }

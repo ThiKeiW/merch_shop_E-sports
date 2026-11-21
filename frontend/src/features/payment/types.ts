@@ -4,3 +4,9 @@ export type PaymentIntentDetails = {
   clientSecret: string
   publishableKey: string
 }
+
+export type PaymentConfirmation = {
+  orderCode: string
+  orderStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'EXPIRED'
+  paymentStatus: string
+}

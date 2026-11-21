@@ -32,8 +32,7 @@ public class PaymentService {
     }
 
     public PaymentIntentResponse createIntent(@NotBlank String orderCode, AuthenticatedUser buyer) {
-        Order order = orderRepository.findByCodeAndUserId(orderCode, buyer.id())
-                .orElseThrow(() -> ApiException.notFound("Pedido no encontrado"));
+        Order order = findOwned(orderCode, buyer);
         if (order.getStatus() != OrderStatus.PENDING) {
             throw ApiException.conflict("El pedido ya no admite pagos");
         }
@@ -50,6 +49,7 @@ public class PaymentService {
             upsertPayment(order, intent.id(), intent.status());
         } else {
             intent = stripeGateway.retrieveIntent(order.getStripePaymentIntentId());
+            upsertPayment(order, intent.id(), intent.status());
         }
 
         return new PaymentIntentResponse(
@@ -57,6 +57,59 @@ public class PaymentService {
                 intent.id(),
                 intent.clientSecret(),
                 stripeGateway.publishableKey());
+    }
+
+    public PaymentConfirmationResponse confirm(@NotBlank String orderCode, AuthenticatedUser buyer) {
+        Order order = findOwned(orderCode, buyer);
+        if (order.getStatus() != OrderStatus.PENDING || isBlank(order.getStripePaymentIntentId())) {
+            return new PaymentConfirmationResponse(order.getCode(), order.getStatus(), "none");
+        }
+
+        String paymentStatus = reconcile(order);
+        Order current = orderRepository.findByCode(order.getCode()).orElse(order);
+        return new PaymentConfirmationResponse(order.getCode(), current.getStatus(), paymentStatus);
+    }
+
+    public String reconcile(Order order) {
+        String intentId = order.getStripePaymentIntentId();
+        if (isBlank(intentId)) {
+            return "none";
+        }
+
+        StripeIntent intent = stripeGateway.retrieveIntent(intentId);
+        String status = isBlank(intent.status()) ? "unknown" : intent.status();
+        if ("succeeded".equals(status)) {
+            markSucceeded(order, intent.id());
+        } else {
+            recordStatus(order, intent.id(), status);
+        }
+        return status;
+    }
+
+    public void markSucceeded(Order order, String intentId) {
+        int changed = orderRepository.transitionIfStatus(
+                order.getId(), OrderStatus.PENDING, OrderStatus.PAID, Instant.now());
+        if (changed > 0) {
+            upsertPayment(order, intentId, "succeeded");
+            return;
+        }
+        Order current = orderRepository.findById(order.getId()).orElse(order);
+        if (current.getStatus() == OrderStatus.PAID) {
+            upsertPayment(current, intentId, "succeeded");
+        }
+    }
+
+    public void recordStatus(Order order, String intentId, String status) {
+        upsertPayment(order, intentId, status);
+    }
+
+    private Order findOwned(String code, AuthenticatedUser buyer) {
+        return orderRepository.findByCodeAndUserId(code, buyer.id())
+                .orElseThrow(() -> ApiException.notFound("Pedido no encontrado"));
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private void upsertPayment(Order order, String intentId, String status) {

@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import { ApiError } from '@/shared/api'
 
 export function CheckoutPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
   const items = useCartStore((state) => state.items)
   const subtotal = useCartStore(selectCartSubtotal)
@@ -23,6 +24,7 @@ export function CheckoutPage() {
       }),
     onSuccess: (order) => {
       clear()
+      void queryClient.invalidateQueries({ queryKey: ['catalog'] })
       navigate(`/pagar/${order.code}`)
     },
     onError: (error: unknown) => {

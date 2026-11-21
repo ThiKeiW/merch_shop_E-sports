@@ -1,3 +1,3 @@
 export { PaymentPage } from './PaymentPage'
-export { createPaymentIntent } from './api'
-export type { PaymentIntentDetails } from './types'
+export { confirmPayment, createPaymentIntent } from './api'
+export type { PaymentConfirmation, PaymentIntentDetails } from './types'

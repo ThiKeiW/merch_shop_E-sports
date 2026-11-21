@@ -53,6 +53,11 @@ export default function App() {
                 </span>
               ) : null}
             </Link>
+            {user ? (
+              <Link to="/pedidos" className="transition-colors hover:text-white">
+                Mis pedidos
+              </Link>
+            ) : null}
             {user?.role === 'ADMIN' ? (
               <Link to="/admin" className="transition-colors hover:text-white">
                 Admin

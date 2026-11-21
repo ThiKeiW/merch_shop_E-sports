@@ -19,6 +19,7 @@ export type Order = {
   shippingCost: number
   total: number
   currency: string
+  stripePaymentIntentId: string | null
   reservationExpiresAt: string | null
   createdAt: string
   itemCount: number

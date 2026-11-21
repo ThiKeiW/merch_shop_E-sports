@@ -74,6 +74,13 @@ function stubApi(publishableKey = intent.publishableKey) {
     if (url === '/api/payments/intent') {
       return { ok: true, status: 200, json: async () => ({ ...intent, publishableKey }) }
     }
+    if (url === '/api/payments/CODE123/confirm') {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ orderCode: 'CODE123', orderStatus: 'PAID', paymentStatus: 'succeeded' }),
+      }
+    }
     throw new Error(`Unexpected URL: ${url}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -84,7 +91,7 @@ describe('PaymentPage', () => {
   beforeEach(() => {
     tokenStorage.set('token')
     mocks.loadStripe.mockResolvedValue({})
-    mocks.confirmPayment.mockResolvedValue({ error: null })
+    mocks.confirmPayment.mockResolvedValue({ error: null, paymentIntent: { status: 'succeeded' } })
   })
 
   afterEach(() => {
@@ -109,6 +116,7 @@ describe('PaymentPage', () => {
     expect(mocks.confirmPayment).toHaveBeenCalledWith(
       expect.objectContaining({ redirect: 'if_required' }),
     )
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === '/api/payments/CODE123/confirm')).toBe(true)
     expect(await screen.findByText('Detalle del pedido')).toBeInTheDocument()
   })
 

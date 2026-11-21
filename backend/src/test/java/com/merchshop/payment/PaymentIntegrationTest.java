@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 
 import com.merchshop.order.Order;
+import com.merchshop.order.OrderService;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -62,6 +65,9 @@ class PaymentIntegrationTest {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private OrderService orderService;
+
     @MockitoBean
     private StripeGateway stripeGateway;
 
@@ -84,6 +90,10 @@ class PaymentIntegrationTest {
         when(stripeGateway.createIntent(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
             String id = "pi_" + order.getCode();
+            return new StripeIntent(id, id + "_secret", "requires_payment_method");
+        });
+        when(stripeGateway.retrieveIntent(anyString())).thenAnswer(invocation -> {
+            String id = invocation.getArgument(0);
             return new StripeIntent(id, id + "_secret", "requires_payment_method");
         });
         when(stripeGateway.verifyAndParse(anyString(), anyString()))
@@ -159,6 +169,37 @@ class PaymentIntegrationTest {
                         .header("Stripe-Signature", "t=1,v1=dummy")
                         .content("{}"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void confirmacionRecuperaPagoExitosoSinWebhook() throws Exception {
+        Fixture fixture = createOrderWithIntent(5001, 2);
+        when(stripeGateway.retrieveIntent(fixture.intentId())).thenReturn(
+                new StripeIntent(fixture.intentId(), fixture.intentId() + "_secret", "succeeded"));
+
+        mockMvc.perform(post("/api/payments/{code}/confirm", fixture.code())
+                        .header("Authorization", "Bearer " + login()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderStatus").value("PAID"))
+                .andExpect(jsonPath("$.paymentStatus").value("succeeded"));
+
+        assertThat(orderStatus(fixture.code())).isEqualTo("PAID");
+        assertThat(paymentStatus(fixture.intentId())).isEqualTo("succeeded");
+        assertThat(stock(5001)).isEqualTo(8);
+    }
+
+    @Test
+    void expiracionNoCancelaPedidoPagadoEnStripe() throws Exception {
+        Fixture fixture = createOrderWithIntent(5001, 2);
+        when(stripeGateway.retrieveIntent(fixture.intentId())).thenReturn(
+                new StripeIntent(fixture.intentId(), fixture.intentId() + "_secret", "succeeded"));
+        jdbc.update("update orders set reservation_expires_at = ? where code = ?",
+                Timestamp.from(Instant.now().minusSeconds(1)), fixture.code());
+
+        orderService.expireDueReservations();
+
+        assertThat(orderStatus(fixture.code())).isEqualTo("PAID");
+        assertThat(stock(5001)).isEqualTo(8);
     }
 
     private Fixture createOrderWithIntent(int variantId, int quantity) throws Exception {

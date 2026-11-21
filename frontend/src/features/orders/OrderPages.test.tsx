@@ -16,6 +16,7 @@ const orders: Order[] = [
     shippingCost: 0,
     total: 64.99,
     currency: 'EUR',
+    stripePaymentIntentId: null,
     reservationExpiresAt: '2026-11-18T12:00:00Z',
     createdAt: '2026-11-18T11:45:00Z',
     itemCount: 1,
@@ -60,6 +61,38 @@ describe('pedidos', () => {
     expect(await screen.findByRole('link', { name: /abcdef123456/ })).toBeInTheDocument()
     expect(screen.getByText('EUR $64.99')).toBeInTheDocument()
     expect(screen.getByText('Pendiente')).toBeInTheDocument()
+  })
+
+  it('confirma automáticamente el pago al abrir un pedido con intent', async () => {
+    const pending = { ...orders[0], stripePaymentIntentId: 'pi_123' }
+    const paid = { ...pending, status: 'PAID' as const }
+    let current = pending
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/confirm') && init?.method === 'POST') {
+        current = paid
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            orderCode: current.code,
+            orderStatus: 'PAID',
+            paymentStatus: 'succeeded',
+          }),
+        }
+      }
+      return { ok: true, status: 200, json: async () => current }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderOrders('/pedidos/abcdef1234567890abcdef1234567890')
+
+    expect(await screen.findByText('Pagado')).toBeInTheDocument()
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) => String(input).includes('/confirm') && init?.method === 'POST',
+      ),
+    ).toBe(true)
   })
 
   it('cancela un pedido pendiente y actualiza el estado', async () => {

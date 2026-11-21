@@ -8,7 +8,7 @@ import { formatPrice } from '@/features/catalog/format'
 import { fetchOrder } from '@/features/orders'
 import { ApiError } from '@/shared/api'
 
-import { createPaymentIntent } from './api'
+import { confirmPayment, createPaymentIntent } from './api'
 import { PaymentForm } from './PaymentForm'
 
 export function PaymentPage() {
@@ -33,10 +33,15 @@ export function PaymentPage() {
     [intentQuery.data],
   )
 
-  function handlePaid() {
-    void queryClient.invalidateQueries({ queryKey: ['orders'] })
-    void queryClient.invalidateQueries({ queryKey: ['orders', code] })
-    navigate(`/pedidos/${code}`)
+  async function handlePaid(paymentStatus: string) {
+    const confirmation = await confirmPayment(code)
+    await queryClient.invalidateQueries({ queryKey: ['orders'] })
+    await queryClient.invalidateQueries({ queryKey: ['orders', code] })
+    await queryClient.invalidateQueries({ queryKey: ['catalog'] })
+    navigate(`/pedidos/${code}`, {
+      replace: true,
+      state: { paymentStatus: confirmation.paymentStatus || paymentStatus },
+    })
   }
 
   return (

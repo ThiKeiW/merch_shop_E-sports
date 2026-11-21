@@ -85,7 +85,7 @@ El backend verifica el ID token contra el JWKS de Google (`https://www.googleapi
 
 - **Backend:** `catalog/` con entidades de solo lectura y `JpaSpecificationExecutor`; la especificación compone predicados solo para los filtros presentes y `sort` acepta `relevance` (por defecto), `newest`, `price-asc`, `price-desc` y `name`. `size` se limita a 48.
 - **Facets:** el panel de equipos se recalcula con los juegos seleccionados (`GET /api/catalog/facets?game=...`); si un equipo deja de estar disponible, el frontend lo quita de la URL.
-- **Detalle:** cada tarjeta enlaza a `/producto/{slug}`, que muestra descripción, precio de la variante seleccionada (talla/color + `priceDelta`), stock y SKU. Las variantes agotadas quedan deshabilitadas y el producto inexistente responde con un estado 404 propio. El botón añade la variante al carrito; el stock se reserva al confirmar el pedido.
+- **Detalle:** cada tarjeta enlaza a `/producto/{slug}`, que muestra descripción, precio de la variante seleccionada (talla/color + `priceDelta`), stock y SKU. Las variantes agotadas quedan deshabilitadas y el producto inexistente responde con un estado 404 propio. El botón añade la variante al carrito; el stock se reserva al confirmar el pedido y la caché del catálogo se invalida para reflejarlo sin recargar.
 - **Frontend:** `features/catalog` contiene `CatalogPage`, `ProductDetailPage`, `ProductCard`, `filters.ts` (parseo/serialización de la URL), `format.ts` y `api.ts`. Las tarjetas y el detalle muestran la imagen principal importada por el scraper, con placeholder de respaldo.
 - **Catálogo real:** `db/03-catalog.sql` carga 40 productos (18 Fnatic, 12 ESL, 10 Riot), 209 variantes y sus imágenes CARD. Precios ESL convertidos de PLN a EUR con factor `1 / 4.30`; stock sintético para que la reserva se pueda probar.
 
@@ -127,11 +127,22 @@ docker compose exec mysql mysql -umerch -pmerchpass merch_shop -e "SHOW TABLES;"
 ## Pagos con Stripe (Fase 6)
 
 - `POST /api/payments/intent` crea (o recupera) un `PaymentIntent` de Stripe para un pedido `PENDING` del usuario autenticado y devuelve `clientSecret` junto con la `publishableKey` configurada en el backend.
-- La UI usa **Payment Element** embebido en `/pagar/:code`; no se usa Stripe Checkout hosted. La confirmación se hace con `redirect: 'if_required'` y luego se vuelve a `/pedidos/:code`.
+- `POST /api/payments/{code}/confirm` consulta el `PaymentIntent` en Stripe y reconcilia el pedido aunque el webhook no haya llegado; es idempotente y solo puede marcar `PENDING → PAID` cuando Stripe devuelve `succeeded`.
+- La UI usa **Payment Element** embebido en `/pagar/:code`; no se usa Stripe Checkout hosted. La confirmación se hace con `redirect: 'if_required'`, se reconcilia con el backend y luego se vuelve a `/pedidos/:code`.
+- Al crear el pedido, confirmar/cancelar el pago o actualizar el estado del pedido se invalida la caché de `['catalog']`; el detalle del producto vuelve a consultar el stock sin necesidad de F5.
+- El detalle del pedido comprueba automáticamente el estado del pago al abrirse, muestra el estado `processing` sin pedir otra vez la tarjeta y ofrece “Actualizar estado del pago”. “Mis pedidos” también está accesible desde la navegación principal.
 - `POST /api/webhooks/stripe` es público, valida la firma con `STRIPE_WEBHOOK_SECRET` sobre el body crudo y registra cada `event_id` en `webhook_events` antes de procesarlo de forma asíncrona; los duplicados se ignoran.
 - Los eventos gestionados son `payment_intent.succeeded` (`PENDING → PAID`, o reembolso si el pedido ya expiró/falló), `payment_intent.payment_failed` y `payment_intent.canceled` (`PENDING → FAILED` con restauración de stock), y `charge.refunded` (`PAID → REFUNDED`).
+- Antes de expirar una reserva con intent creado, se consulta Stripe: si el pago está `succeeded` se marca como pagado; si está `processing`/`requires_action` se pospone la expiración; si Stripe no responde también se pospone para no cancelar un pago real.
 - Al expirar o cancelar un pedido con intent creado, se intenta cancelar también el `PaymentIntent` en Stripe.
 - Configura `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` y `STRIPE_WEBHOOK_SECRET` en `.env`; Compose los pasa al backend. Sin claves los endpoints de pago responden `503` y la pantalla de pago avisa que Stripe no está configurado.
+- Para probar webhooks en local necesitas una URL pública HTTPS o el CLI de Stripe:
+
+```powershell
+stripe listen --forward-to localhost:8080/api/webhooks/stripe --events payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled,charge.refunded
+```
+
+El CLI imprime un `whsec_...` propio que debes poner en `STRIPE_WEBHOOK_SECRET` y reiniciar el backend; no mezcles ese secreto con el de un endpoint del Dashboard.
 
 ## Desarrollo local sin Docker
 
@@ -201,7 +212,7 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 | 3 | Catálogo: API y vista con filtros acumulativos, detalle de producto, home en rayo y catálogo real de 40 productos | Hecha |
 | 4 | Admin (productos, stock, pedidos) + scraper | Hecha |
 | 5 | Carrito localStorage y pedidos con reserva de stock | Hecha |
-| 6 | Stripe Payment Element y webhooks idempotentes | Hecha |
+| 6 | Stripe Payment Element, reconciliación de pagos y webhooks idempotentes | Hecha |
 | 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Pendiente |
 | 8 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
 | 9 | Despliegue en Azure | Pendiente |
