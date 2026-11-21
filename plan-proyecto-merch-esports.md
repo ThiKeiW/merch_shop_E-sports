@@ -1,5 +1,7 @@
 # Plan de proyecto: tienda de merch de e-sports
 
+> **Estado actual:** fases 1 a 7 completadas. La Fase 7 cerró el rediseño visual de todas las vistas con el sistema de diseño en `frontend/src/index.css`, assets propios en `frontend/public/assets/` y la franja animada del catálogo retirada. Las fases 8 y 9 siguen pendientes.
+
 ## 0. Puntos a confirmar (se asume lo indicado)
 
 - **Base de datos:** la especificación original indica MySQL y en la sección de Docker se menciona PostgreSQL. Se asume **MySQL 8**. Si se prefiere PostgreSQL, solo cambian el dialecto de JPA, la imagen de Docker y algunos tipos del script SQL.

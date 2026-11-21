@@ -14,6 +14,7 @@ La planeación completa está en [`plan-proyecto-merch-esports.md`](./plan-proye
 | Backend | Spring Boot 4.1 · Java 21 · Spring Security · JWT (HS256) · Spring Data JPA · Bean Validation · Micrometer |
 | Base de datos | MySQL 8.4 (esquema y seed en SQL idempotente) |
 | Infra | Docker Compose · GitHub Actions |
+| UI | Sistema visual de Fase 7: Nunito, componentes biselados, responsive y accesibilidad |
 | Pagos | Stripe Payment Element + webhooks (Fase 6) |
 
 ## Requisitos
@@ -89,6 +90,27 @@ El backend verifica el ID token contra el JWKS de Google (`https://www.googleapi
 - **Frontend:** `features/catalog` contiene `CatalogPage`, `ProductDetailPage`, `ProductCard`, `filters.ts` (parseo/serialización de la URL), `format.ts` y `api.ts`. Las tarjetas y el detalle muestran la imagen principal importada por el scraper, con placeholder de respaldo.
 - **Catálogo real:** `db/03-catalog.sql` carga 40 productos (18 Fnatic, 12 ESL, 10 Riot), 209 variantes y sus imágenes CARD. Precios ESL convertidos de PLN a EUR con factor `1 / 4.30`; stock sintético para que la reserva se pueda probar.
 
+## Interfaz (Fase 7)
+
+El frontend usa un sistema visual propio inspirado en la referencia estática del proyecto: tipografía **Nunito**, paleta oscura con acentos por juego y componentes reutilizables (`.bevel`, `.field`, `.box`, `.panel`, `.card-img`) definidos en `frontend/src/index.css`.
+
+- La home muestra el video `frontend/public/assets/hero.mp4` y cuatro paneles de juego con las portadas de `frontend/public/assets/covers/`.
+- El catálogo mantiene sus filtros en la URL, tarjetas con imagen/placeholder, estados de carga/vacío/error y paginación; la línea decorativa animada del fondo fue retirada.
+- Las vistas de detalle, carrito, checkout, pedidos, pago y administración comparten el mismo lenguaje visual sin cambiar contratos API ni lógica de negocio.
+- Login y registro usan `AuthShell`, con el navbar y el footer ocultos en pantallas de autenticación.
+- La navegación es fija: transparente sobre el hero y sólida al hacer scroll o en el resto de rutas.
+- Se conservan estados accesibles de foco y la reducción de movimiento del sistema para las transiciones.
+
+Verificación de la Fase 7:
+
+```bash
+cd frontend
+npm run lint
+npm run test:run
+npm run build
+```
+
+El build incluye `tsc -b`; la suite frontend cubre 44 pruebas.
 
 ## Estructura
 
@@ -213,7 +235,7 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 | 4 | Admin (productos, stock, pedidos) + scraper | Hecha |
 | 5 | Carrito localStorage y pedidos con reserva de stock | Hecha |
 | 6 | Stripe Payment Element, reconciliación de pagos y webhooks idempotentes | Hecha |
-| 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Pendiente |
+| 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Hecha |
 | 8 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
 | 9 | Despliegue en Azure | Pendiente |
 
@@ -225,3 +247,4 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 - La autenticación usa **JWT propio** (sin servidor de identidad externo) para mantener el proyecto autocontenido; el contrato está en `/api/auth/*`.
 - Las imágenes del catálogo se importan en `db/03-catalog.sql` desde `/images/products`; el frontend usa placeholder solo si la ruta no existe.
 - El stock del carrito es orientativo: la reserva real se valida de nuevo contra MySQL al confirmar el pedido.
+- El rediseño de Fase 7 fue exclusivamente visual: no cambió rutas, DTOs, reglas de stock ni integración con Stripe.

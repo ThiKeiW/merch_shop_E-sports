@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { fetchFacets, fetchProducts } from './api'
@@ -21,73 +21,6 @@ const SORT_OPTIONS: { value: CatalogSort; label: string }[] = [
 ]
 
 type FilterOption = { slug: string; name: string }
-
-function CatalogStrip({ formRef }: { formRef: RefObject<HTMLFormElement | null> }) {
-  const stripRef = useRef<HTMLDivElement>(null)
-  const [metrics, setMetrics] = useState({ height: 56, dx: 790, ly: 40, x3: 957 })
-
-  useEffect(() => {
-    const update = () => {
-      const strip = stripRef.current
-      const form = formRef.current
-      const parent = strip?.parentElement
-      if (!strip || !form || !parent) {
-        return
-      }
-
-      const parentRect = parent.getBoundingClientRect()
-      const formRect = form.getBoundingClientRect()
-      const fieldRect = form.firstElementChild?.getBoundingClientRect()
-      const buttonRect = form.lastElementChild?.getBoundingClientRect()
-      if (!fieldRect || !buttonRect || parentRect.width === 0) {
-        return
-      }
-
-      const dx = (fieldRect.right + buttonRect.left) / 2 - parentRect.left
-      const ly = Math.max(40, formRect.top - parentRect.top - 15)
-      const height = Math.round(ly + 16)
-      const x3 = Math.min(Math.max(957, (dx / parentRect.width) * 1000 + 20), 985)
-      setMetrics({ height, dx, ly, x3 })
-    }
-
-    update()
-    window.addEventListener('resize', update)
-    const observer = window.ResizeObserver ? new window.ResizeObserver(update) : null
-    if (observer && stripRef.current?.parentElement) {
-      observer.observe(stripRef.current.parentElement)
-    }
-    if (formRef.current) {
-      observer?.observe(formRef.current)
-    }
-
-    return () => {
-      window.removeEventListener('resize', update)
-      observer?.disconnect()
-    }
-  }, [formRef])
-
-  const path = (offset: number) =>
-    `M0 ${14 + offset} L443 ${14 + offset} L499 ${metrics.ly + offset} L${metrics.x3} ${metrics.ly + offset} L1000 ${metrics.ly - 26 + offset}`
-
-  return (
-    <div
-      ref={stripRef}
-      className="strip"
-      style={{ height: metrics.height }}
-      aria-hidden="true"
-    >
-      <svg className="strip-base" viewBox={`0 0 1000 ${metrics.height}`} preserveAspectRatio="none">
-        <path className="g" d={path(3)} />
-        <path className="y" d={path(0)} />
-      </svg>
-      <svg className="strip-lit" viewBox={`0 0 1000 ${metrics.height}`} preserveAspectRatio="none">
-        <path className="g" d={path(3)} />
-        <path className="y" d={path(0)} />
-      </svg>
-      <i className="diamond" style={{ left: metrics.dx, top: metrics.ly }} />
-    </div>
-  )
-}
 
 function FilterGroup({
   title,
@@ -146,7 +79,6 @@ export function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filters = useMemo(() => parseFilters(searchParams), [searchParams])
   const searchRef = useRef<HTMLInputElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
 
   const productsQuery = useQuery({
     queryKey: ['catalog', 'products', filters],
@@ -180,49 +112,45 @@ export function CatalogPage() {
 
   return (
     <section className="pb-20 pt-28">
-      <div className="relative">
-        <CatalogStrip formRef={formRef} />
-        <div className="relative z-10 mx-auto max-w-[1400px] px-4 md:px-8">
-          <p className="eyebrow">Catálogo</p>
-          <div className="mt-3 flex flex-col gap-10 md:flex-row md:items-end md:justify-between md:gap-6">
-            <h1 className="display text-4xl leading-none md:text-6xl">
-              Todo el merch
-              <br />
-              <span className="text-white/45">filtrado a tu manera</span>
-            </h1>
+      <div className="mx-auto max-w-[1400px] px-4 md:px-8">
+        <p className="eyebrow">Catálogo</p>
+        <div className="mt-3 flex flex-col gap-10 md:flex-row md:items-end md:justify-between md:gap-6">
+          <h1 className="display text-4xl leading-none md:text-6xl">
+            Todo el merch
+            <br />
+            <span className="text-white/45">filtrado a tu manera</span>
+          </h1>
 
-            <form
-              ref={formRef}
-              role="search"
-              onSubmit={(event) => {
-                event.preventDefault()
-                apply({ q: searchRef.current?.value.trim() ?? '' })
-              }}
-              className="flex w-full gap-2 md:w-[420px]"
-            >
-              <label htmlFor="catalog-search" className="sr-only">
-                Buscar productos
-              </label>
-              <div className="bevel-field">
-                <input
-                  id="catalog-search"
-                  key={filters.q}
-                  ref={searchRef}
-                  type="search"
-                  defaultValue={filters.q}
-                  placeholder="Buscar jersey, figura, mousepad…"
-                />
-              </div>
-              <button type="submit" className="bevel bevel-p shrink-0">
-                <svg aria-hidden className="ic h-4 w-4" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
-                </svg>
-                <span className="hidden sm:inline">Buscar</span>
-                <span className="sr-only sm:hidden">Buscar</span>
-              </button>
-            </form>
-          </div>
+          <form
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault()
+              apply({ q: searchRef.current?.value.trim() ?? '' })
+            }}
+            className="flex w-full gap-2 md:w-[420px]"
+          >
+            <label htmlFor="catalog-search" className="sr-only">
+              Buscar productos
+            </label>
+            <div className="bevel-field">
+              <input
+                id="catalog-search"
+                key={filters.q}
+                ref={searchRef}
+                type="search"
+                defaultValue={filters.q}
+                placeholder="Buscar jersey, figura, mousepad…"
+              />
+            </div>
+            <button type="submit" className="bevel bevel-p shrink-0">
+              <svg aria-hidden className="ic h-4 w-4" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <span className="hidden sm:inline">Buscar</span>
+              <span className="sr-only sm:hidden">Buscar</span>
+            </button>
+          </form>
         </div>
       </div>
 
