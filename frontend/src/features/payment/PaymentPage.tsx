@@ -45,31 +45,34 @@ export function PaymentPage() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
-      <Link to="/pedidos" className="text-[11px] tracking-[0.16em] text-zinc-500 uppercase underline">
+    <section className="mx-auto w-full max-w-3xl px-4 pb-20 pt-28 md:px-8">
+      <Link
+        to="/pedidos"
+        className="text-[0.7rem] font-extrabold tracking-[0.16em] text-white/55 uppercase underline underline-offset-4 transition-colors hover:text-white"
+      >
         ← Mis pedidos
       </Link>
-      <p className="mt-8 text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">Pago seguro</p>
-      <h1 className="font-display mt-3 break-all text-3xl tracking-tight uppercase">{code}</h1>
+      <p className="eyebrow mt-10">Pago seguro</p>
+      <h1 className="display mt-2 break-all text-3xl md:text-5xl">{code}</h1>
 
       {orderQuery.isPending ? (
-        <p className="mt-8 text-sm text-zinc-500">Cargando pedido…</p>
+        <p className="mt-8 text-sm text-white/45">Cargando pedido…</p>
       ) : orderQuery.isError ? (
         <p role="alert" className="mt-8 text-sm text-red-300">
           No encontramos ese pedido o no pertenece a tu cuenta.
         </p>
       ) : orderQuery.data && orderQuery.data.status !== 'PENDING' ? (
-        <div className="mt-8 border border-line bg-surface p-6">
-          <p className="text-sm text-zinc-300">Este pedido ya no admite pagos.</p>
+        <div className="box mt-8 p-6">
+          <p className="text-sm text-white/75">Este pedido ya no admite pagos.</p>
           <Link
             to={`/pedidos/${code}`}
-            className="mt-5 inline-block text-xs text-zinc-300 underline underline-offset-4"
+            className="mt-5 inline-block text-xs font-bold text-white/65 underline underline-offset-4 transition-colors hover:text-white"
           >
             Ver detalle del pedido
           </Link>
         </div>
       ) : intentQuery.isPending ? (
-        <p className="mt-8 text-sm text-zinc-500">Preparando el pago…</p>
+        <p className="mt-8 text-sm text-white/45">Preparando el pago…</p>
       ) : intentQuery.isError ? (
         <p role="alert" className="mt-8 text-sm text-red-300">
           {intentQuery.error instanceof ApiError
@@ -77,12 +80,12 @@ export function PaymentPage() {
             : 'No pudimos iniciar el pago. Inténtalo de nuevo.'}
         </p>
       ) : intentQuery.data && stripePromise ? (
-        <div className="mt-8 border border-line bg-surface p-5 sm:p-6">
-          <div className="flex items-center justify-between text-sm">
-            <span className="tracking-[0.18em] text-zinc-500 uppercase">Total a pagar</span>
-            <span className="font-semibold text-white">
+        <div className="box mt-8 p-5 sm:p-6">
+          <div className="flex items-baseline justify-between">
+            <span className="eyebrow">Total a pagar</span>
+            <b className="text-lg text-white">
               {formatPrice(orderQuery.data?.total ?? 0, orderQuery.data?.currency ?? 'EUR')}
-            </span>
+            </b>
           </div>
           <Elements
             stripe={stripePromise}

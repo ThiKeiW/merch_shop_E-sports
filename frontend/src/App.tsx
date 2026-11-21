@@ -1,4 +1,5 @@
-import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import { AdminPage, AdminProductFormPage, AdminProductsPage } from '@/features/admin'
 import {
@@ -17,84 +18,116 @@ import { PaymentPage } from '@/features/payment'
 
 function NotFound() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-      <p className="font-display text-6xl text-zinc-700">404</p>
-      <h2 className="mt-4 text-xl font-semibold">Esta página todavía no existe</h2>
-      <Link to="/" className="mt-6 inline-block text-sm text-zinc-400 underline underline-offset-4">
+    <section className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col items-center justify-center px-4 pt-28 pb-20 text-center">
+      <p className="display text-7xl text-white/15">404</p>
+      <h1 className="display mt-5 text-2xl">Esta página todavía no existe</h1>
+      <Link to="/" className="bevel bevel-p mt-8">
         Volver al inicio
       </Link>
-    </div>
+    </section>
   )
 }
 
 export default function App() {
   const navigate = useNavigate()
+  const location = useLocation()
   const user = useAuthStore((state) => state.user)
   const clear = useAuthStore((state) => state.clear)
   const cartCount = useCartStore(selectCartCount)
+  const [scrolled, setScrolled] = useState(false)
   useSession()
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 32)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const authScreen = location.pathname === '/login' || location.pathname === '/registro'
+  const solidNav = location.pathname !== '/' || scrolled
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-50 border-b border-line bg-ink/85 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link to="/" className="font-display text-sm tracking-[0.2em] uppercase">
-            Merch<span className="text-zinc-500">//</span>Shop
-          </Link>
-          <nav className="flex items-center gap-4 text-xs font-semibold tracking-[0.18em] text-zinc-400 uppercase sm:gap-6">
-            <Link to="/catalogo" className="transition-colors hover:text-white">
-              Catálogo
+      {!authScreen ? (
+        <header
+          className={['nav fixed inset-x-0 top-0 z-50', solidNav ? 'solid' : ''].join(' ')}
+        >
+          <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4 px-4 md:px-8">
+            <Link to="/" className="display text-sm tracking-[0.18em]">
+              Merch<span className="opacity-50">//</span>Shop
             </Link>
-            <Link to="/carrito" className="flex items-center gap-1.5 transition-colors hover:text-white">
-              Carrito
-              {cartCount > 0 ? (
-                <span className="bg-white px-1.5 py-0.5 text-[10px] font-bold text-ink">
+
+            <nav className="flex items-center gap-1 text-[0.72rem] font-semibold tracking-[0.16em] uppercase md:gap-5">
+              <Link
+                to="/catalogo"
+                className="hidden px-2 py-2 text-white/80 transition-colors hover:text-white md:inline"
+              >
+                Catálogo
+              </Link>
+
+              <Link
+                to="/carrito"
+                aria-label="Carrito"
+                className="relative p-2 text-white/80 transition-colors hover:text-white"
+              >
+                <svg aria-hidden className="ic h-5 w-5" viewBox="0 0 24 24">
+                  <circle cx="9" cy="20" r="1.4" />
+                  <circle cx="18" cy="20" r="1.4" />
+                  <path d="M2 3h3l2.6 12.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 8H6" />
+                </svg>
+                <span className="absolute top-0 right-0 grid h-4 min-w-4 place-items-center bg-white px-1 text-[10px] font-bold text-black">
                   {cartCount}
                 </span>
-              ) : null}
-            </Link>
-            {user ? (
-              <Link to="/pedidos" className="transition-colors hover:text-white">
-                Mis pedidos
               </Link>
-            ) : null}
-            {user?.role === 'ADMIN' ? (
-              <Link to="/admin" className="transition-colors hover:text-white">
-                Admin
-              </Link>
-            ) : null}
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="hidden max-w-32 truncate text-zinc-300 normal-case sm:inline">
-                  {user.displayName}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    clear()
-                    navigate('/')
-                  }}
-                  className="border border-line px-3 py-1.5 text-[11px] tracking-[0.16em] transition-colors hover:border-zinc-500 hover:text-white"
-                >
-                  Salir
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link to="/login" className="transition-colors hover:text-white">
-                  Ingresar
-                </Link>
+
+              {user ? (
                 <Link
-                  to="/registro"
-                  className="border border-line px-3 py-1.5 text-[11px] tracking-[0.16em] transition-colors hover:border-zinc-500 hover:text-white"
+                  to="/pedidos"
+                  className="hidden px-2 py-2 text-white/80 transition-colors hover:text-white md:inline"
                 >
-                  Crear cuenta
+                  Mis pedidos
                 </Link>
-              </div>
-            )}
-          </nav>
-        </div>
-      </header>
+              ) : null}
+              {user?.role === 'ADMIN' ? (
+                <Link
+                  to="/admin"
+                  className="hidden px-2 py-2 text-white/80 transition-colors hover:text-white md:inline"
+                >
+                  Admin
+                </Link>
+              ) : null}
+
+              {user ? (
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <span className="hidden max-w-32 truncate font-bold text-white normal-case sm:inline">
+                    {user.displayName}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clear()
+                      navigate('/')
+                    }}
+                    className="bevel bevel-sm"
+                  >
+                    Salir
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 sm:gap-3">
+                  <Link to="/login" className="px-2 py-2 text-white/80 transition-colors hover:text-white">
+                    Ingresar
+                  </Link>
+                  <Link to="/registro" className="bevel bevel-sm">
+                    Crear cuenta
+                  </Link>
+                </div>
+              )}
+            </nav>
+          </div>
+        </header>
+      ) : null}
 
       <main className="flex-1">
         <Routes>
@@ -172,12 +205,14 @@ export default function App() {
         </Routes>
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-8 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>Proyecto académico y demostrativo. Pagos en modo de prueba.</p>
-          <p className="tracking-[0.18em] uppercase">Fase 6 — Pagos con Stripe</p>
-        </div>
-      </footer>
+      {!authScreen ? (
+        <footer className="border-t border-white/10 bg-ink">
+          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2 px-4 py-8 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between md:px-8">
+            <p>Proyecto académico y demostrativo. Pagos en modo de prueba.</p>
+            <p className="font-extrabold tracking-[0.18em] uppercase">Fase 7 — Rediseño de interfaces</p>
+          </div>
+        </footer>
+      ) : null}
     </div>
   )
 }

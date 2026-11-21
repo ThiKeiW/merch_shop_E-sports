@@ -73,8 +73,8 @@ function TextInput({
   maxLength?: number
 }) {
   return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="block text-[11px] font-semibold tracking-[0.2em] text-zinc-400 uppercase">
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-[0.65rem] font-extrabold tracking-[0.2em] text-white/50 uppercase">
         {label}
       </label>
       <input
@@ -87,7 +87,7 @@ function TextInput({
         min={min}
         step={step}
         maxLength={maxLength}
-        className="w-full border border-line bg-surface-2 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-400"
+        className="field"
       />
     </div>
   )
@@ -109,8 +109,8 @@ function LabeledSelect({
   children: ReactNode
 }) {
   return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="block text-[11px] font-semibold tracking-[0.2em] text-zinc-400 uppercase">
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-[0.65rem] font-extrabold tracking-[0.2em] text-white/50 uppercase">
         {label}
       </label>
       <select
@@ -118,7 +118,7 @@ function LabeledSelect({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
-        className="w-full border border-line bg-surface-2 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-zinc-400 disabled:opacity-50"
+        className="field disabled:opacity-50"
       >
         {children}
       </select>
@@ -287,12 +287,12 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
       : []
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
-      <p className="text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">Staff</p>
-      <h1 className="font-display mt-3 text-3xl tracking-tight uppercase">
+    <section className="mx-auto w-full max-w-5xl px-4 pb-20 pt-28 md:px-8">
+      <p className="eyebrow">Staff</p>
+      <h1 className="display mt-2 text-4xl md:text-6xl">
         {product ? 'Editar producto' : 'Nuevo producto'}
       </h1>
-      <p className="mt-3 text-sm text-zinc-400">
+      <p className="mt-3 text-sm text-white/50">
         {product
           ? `Actualiza los datos de ${product.name}. El slug se conserva salvo que lo cambies.`
           : 'El slug se genera automáticamente si lo dejas vacío.'}
@@ -303,8 +303,8 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
       </div>
 
       <form className="mt-6 space-y-8" onSubmit={submit} noValidate>
-        <div className="border border-line bg-surface p-5">
-          <h2 className="text-[11px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">
+        <div className="box p-5">
+          <h2 className="text-[0.65rem] font-extrabold tracking-[0.2em] text-white/45 uppercase">
             Datos generales
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -325,10 +325,10 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
               maxLength={160}
             />
 
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-1.5 sm:col-span-2">
               <label
                 htmlFor="product-description"
-                className="block text-[11px] font-semibold tracking-[0.2em] text-zinc-400 uppercase"
+                className="block text-[0.65rem] font-extrabold tracking-[0.2em] text-white/50 uppercase"
               >
                 Descripción
               </label>
@@ -338,7 +338,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                 onChange={(event) => setDescription(event.target.value)}
                 rows={4}
                 maxLength={5000}
-                className="w-full border border-line bg-surface-2 px-3 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-400"
+                className="field"
               />
             </div>
 
@@ -410,18 +410,20 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-6 text-xs text-zinc-300">
+          <div className="mt-4 flex flex-wrap gap-6 text-sm text-white/75">
             <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+                <input
+                  type="checkbox"
+                  className="accent-white"
                 checked={featured}
                 onChange={(event) => setFeatured(event.target.checked)}
               />
               Destacado en el catálogo
             </label>
             <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+                <input
+                  type="checkbox"
+                  className="accent-white"
                 checked={active}
                 onChange={(event) => setActive(event.target.checked)}
               />
@@ -430,15 +432,15 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
           </div>
         </div>
 
-        <div className="border border-line bg-surface">
-          <div className="flex items-center justify-between border-b border-line px-5 py-3">
-            <h2 className="text-[11px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">
+        <div className="box">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+            <h2 className="text-[0.65rem] font-extrabold tracking-[0.2em] text-white/45 uppercase">
               Variantes
             </h2>
             <button
               type="button"
               onClick={() => setVariants((current) => [...current, emptyVariant()])}
-              className="border border-line px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] uppercase transition-colors hover:border-zinc-500 hover:text-white"
+              className="bevel bevel-sm"
             >
               Agregar variante
             </button>
@@ -448,14 +450,14 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
             {variants.map((variant, index) => (
               <div
                 key={variant.key}
-                className="grid gap-3 border border-line/60 p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto]"
+                className="grid gap-3 border border-white/10 p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto]"
               >
                 <input
                   aria-label={`SKU variante ${index + 1}`}
                   value={variant.sku}
                   onChange={(event) => patchVariant(variant.key, { sku: event.target.value })}
                   placeholder="SKU (opcional)"
-                  className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                  className="field field-sm"
                 />
                 <input
                   aria-label={`Talla variante ${index + 1}`}
@@ -463,7 +465,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                   onChange={(event) => patchVariant(variant.key, { size: event.target.value })}
                   placeholder="Talla"
                   required
-                  className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                  className="field field-sm"
                 />
                 <input
                   aria-label={`Color variante ${index + 1}`}
@@ -471,7 +473,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                   onChange={(event) => patchVariant(variant.key, { color: event.target.value })}
                   placeholder="Color"
                   required
-                  className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                  className="field field-sm"
                 />
                 <input
                   aria-label={`Ajuste de precio variante ${index + 1}`}
@@ -480,7 +482,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                   step="0.01"
                   value={variant.priceDelta}
                   onChange={(event) => patchVariant(variant.key, { priceDelta: event.target.value })}
-                  className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                  className="field field-sm"
                 />
                 <input
                   aria-label={`Stock variante ${index + 1}`}
@@ -489,7 +491,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                   step="1"
                   value={variant.stock}
                   onChange={(event) => patchVariant(variant.key, { stock: event.target.value })}
-                  className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                  className="field field-sm"
                 />
                 <button
                   type="button"
@@ -497,7 +499,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                   onClick={() =>
                     setVariants((current) => current.filter((item) => item.key !== variant.key))
                   }
-                  className="px-2 text-[10px] font-semibold tracking-[0.14em] text-red-300 uppercase disabled:opacity-30"
+                  className="px-2 text-[0.62rem] font-extrabold tracking-[0.14em] text-red-300 uppercase disabled:opacity-30"
                 >
                   Quitar
                 </button>
@@ -506,9 +508,9 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
           </div>
         </div>
 
-        <div className="border border-line bg-surface">
-          <div className="flex items-center justify-between border-b border-line px-5 py-3">
-            <h2 className="text-[11px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">
+        <div className="box">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+            <h2 className="text-[0.65rem] font-extrabold tracking-[0.2em] text-white/45 uppercase">
               Imágenes
             </h2>
             <button
@@ -517,42 +519,43 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
               onClick={() =>
                 setImages((current) => [...current, emptyImage(current.length === 0)])
               }
-              className="border border-line px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] uppercase transition-colors hover:border-zinc-500 hover:text-white disabled:opacity-40"
+              className="bevel bevel-sm"
             >
               Agregar imagen
             </button>
           </div>
 
           {images.length === 0 ? (
-            <p className="px-5 py-6 text-xs text-zinc-500">
-              Sin imágenes. Puedes usar rutas de <code>/images/products/…</code> o una URL externa.
+            <p className="px-5 py-6 text-xs text-white/45">
+              Sin imágenes. Puedes usar rutas de{' '}
+              <code className="text-white/75">/images/products/…</code> o una URL externa.
             </p>
           ) : (
             <div className="space-y-3 p-5">
               {images.map((image, index) => (
                 <div
                   key={image.key}
-                  className="grid gap-3 border border-line/60 p-3 sm:grid-cols-[2fr_2fr_1fr_auto_auto]"
+                  className="grid gap-3 border border-white/10 p-3 sm:grid-cols-[2fr_2fr_1fr_auto_auto]"
                 >
                   <input
                     aria-label={`Ruta imagen ${index + 1}`}
                     value={image.path}
                     onChange={(event) => patchImage(image.key, { path: event.target.value })}
                     placeholder="/images/products/mi-producto.webp"
-                    className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                    className="field field-sm"
                   />
                   <input
                     aria-label={`Origen imagen ${index + 1}`}
                     value={image.sourceUrl}
                     onChange={(event) => patchImage(image.key, { sourceUrl: event.target.value })}
                     placeholder="URL de origen (opcional)"
-                    className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                    className="field field-sm"
                   />
                   <select
                     aria-label={`Tipo imagen ${index + 1}`}
                     value={image.kind}
                     onChange={(event) => patchImage(image.key, { kind: event.target.value })}
-                    className="border border-line bg-surface-2 px-2 py-2 text-xs text-zinc-100"
+                    className="field field-sm"
                   >
                     {IMAGE_KINDS.map((kind) => (
                       <option key={kind} value={kind}>
@@ -560,10 +563,11 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                       </option>
                     ))}
                   </select>
-                  <label className="flex items-center gap-2 text-[10px] tracking-[0.12em] text-zinc-400 uppercase">
+                  <label className="flex items-center gap-2 text-[0.62rem] font-bold tracking-[0.12em] text-white/55 uppercase">
                     <input
                       type="radio"
                       name="primary-image"
+                      className="accent-white"
                       checked={image.primary}
                       onChange={() => selectPrimary(image.key)}
                     />
@@ -572,7 +576,7 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
                   <button
                     type="button"
                     onClick={() => removeImage(image.key)}
-                    className="px-2 text-[10px] font-semibold tracking-[0.14em] text-red-300 uppercase"
+                    className="px-2 text-[0.62rem] font-extrabold tracking-[0.14em] text-red-300 uppercase"
                   >
                     Quitar
                   </button>
@@ -601,13 +605,13 @@ function ProductForm({ facets, product }: { facets: AdminFacets; product?: Admin
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="bg-white px-5 py-3 text-[11px] font-bold tracking-[0.18em] text-ink uppercase transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+            className="bevel bevel-p"
           >
             {mutation.isPending ? 'Guardando…' : product ? 'Guardar cambios' : 'Crear producto'}
           </button>
           <Link
             to="/admin/productos"
-            className="text-[11px] font-semibold tracking-[0.16em] text-zinc-400 uppercase hover:text-white"
+            className="text-[0.7rem] font-extrabold tracking-[0.16em] text-white/50 uppercase underline underline-offset-4 transition-colors hover:text-white"
           >
             Cancelar
           </Link>
@@ -630,8 +634,8 @@ export function AdminProductFormPage() {
 
   if (facetsQuery.isPending || (isEdit && productQuery.isPending)) {
     return (
-      <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
-        <p className="text-sm text-zinc-500">Cargando formulario…</p>
+      <section className="mx-auto w-full max-w-5xl px-4 pb-20 pt-28 md:px-8">
+        <p className="text-sm text-white/45">Cargando formulario…</p>
       </section>
     )
   }
@@ -641,11 +645,14 @@ export function AdminProductFormPage() {
 
   if (!facets || (isEdit && !product)) {
     return (
-      <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+      <section className="mx-auto w-full max-w-5xl px-4 pb-20 pt-28 md:px-8">
         <p role="alert" className="text-sm text-red-300">
           No pudimos cargar los datos del producto.
         </p>
-        <Link to="/admin/productos" className="mt-4 inline-block text-xs text-zinc-400 underline">
+        <Link
+          to="/admin/productos"
+          className="mt-4 inline-block text-xs font-bold text-white/55 underline underline-offset-4"
+        >
           Volver al listado
         </Link>
       </section>

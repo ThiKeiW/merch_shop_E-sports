@@ -37,55 +37,55 @@ export function CheckoutPage() {
   })
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
-      <p className="text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">Confirmación</p>
-      <h1 className="font-display mt-3 text-3xl tracking-tight uppercase">Finalizar pedido</h1>
+    <section className="mx-auto w-full max-w-3xl px-4 pb-20 pt-28 md:px-8">
+      <p className="eyebrow">Confirmación</p>
+      <h1 className="display mt-2 text-4xl md:text-6xl">Finalizar pedido</h1>
 
       {items.length === 0 ? (
-        <div className="mt-8 border border-line bg-surface p-6 text-center">
-          <p className="text-sm text-zinc-400">Tu carrito está vacío.</p>
+        <div className="box mt-8 p-8 text-center">
+          <p className="text-sm text-white/55">Tu carrito está vacío.</p>
           <Link
             to="/catalogo"
-            className="mt-5 inline-block text-xs text-zinc-300 underline underline-offset-4"
+            className="mt-5 inline-block text-xs font-bold text-white/65 underline underline-offset-4 transition-colors hover:text-white"
           >
             Volver al catálogo
           </Link>
         </div>
       ) : (
-        <div className="mt-8 space-y-6">
-          <div className="border border-line bg-surface p-5">
-            <p className="text-[11px] tracking-[0.16em] text-zinc-500 uppercase">Comprador</p>
-            <p className="mt-2 text-sm text-zinc-200">{user?.displayName}</p>
-            <p className="mt-1 text-sm text-zinc-400">{user?.email}</p>
+        <div className="mt-8 space-y-4">
+          <div className="box p-5">
+            <p className="eyebrow">Comprador</p>
+            <p className="mt-2 font-bold text-white">{user?.displayName}</p>
+            <p className="text-sm text-white/55">{user?.email}</p>
           </div>
 
-          <div className="border border-line bg-surface">
+          <div className="box divide-y divide-white/10">
             {items.map((item) => (
               <div
                 key={item.variantId}
-                className="flex items-center justify-between gap-4 border-b border-line/60 p-4 text-sm last:border-0"
+                className="flex items-center justify-between gap-4 p-4 text-sm"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-zinc-100">{item.name}</p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="truncate font-bold text-white">{item.name}</p>
+                  <p className="mt-1 text-xs text-white/45">
                     {item.size} / {item.color} · {item.quantity} unidad(es)
                   </p>
                 </div>
-                <p className="shrink-0 text-zinc-200">
+                <p className="shrink-0 text-white/85">
                   {formatPrice(item.unitPrice * item.quantity, item.currency)}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="border border-line bg-surface p-5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="tracking-[0.18em] text-zinc-500 uppercase">Total</span>
-              <span className="font-semibold text-white">
+          <div className="box p-5">
+            <div className="flex items-baseline justify-between">
+              <span className="eyebrow">Total</span>
+              <b className="text-lg text-white">
                 {formatPrice(subtotal, items[0]?.currency ?? 'EUR')}
-              </span>
+              </b>
             </div>
-            <p className="mt-2 text-[11px] text-zinc-500">
+            <p className="mt-2 text-xs text-white/45">
               Al confirmar se reserva el stock durante 15 minutos. Continuarás al pago seguro.
             </p>
 
@@ -103,14 +103,11 @@ export function CheckoutPage() {
                   setErrorMessage(null)
                   mutation.mutate()
                 }}
-                className="border border-white bg-white px-6 py-2.5 text-[11px] font-bold tracking-[0.18em] text-ink uppercase disabled:cursor-not-allowed disabled:opacity-50"
+                className="bevel bevel-p"
               >
                 {mutation.isPending ? 'Creando pedido…' : 'Confirmar pedido'}
               </button>
-              <Link
-                to="/carrito"
-                className="border border-line px-6 py-2.5 text-[11px] font-semibold tracking-[0.18em] uppercase transition-colors hover:border-zinc-500"
-              >
+              <Link to="/carrito" className="bevel">
                 Volver al carrito
               </Link>
             </div>

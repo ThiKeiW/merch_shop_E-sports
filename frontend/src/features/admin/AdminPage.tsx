@@ -14,10 +14,10 @@ export function AdminPage() {
   const query = useQuery({ queryKey: ['admin', 'users'], queryFn: fetchUsers })
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
-      <p className="text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">Staff</p>
-      <h1 className="font-display mt-3 text-3xl tracking-tight uppercase">Administración</h1>
-      <p className="mt-3 text-sm text-zinc-400">
+    <section className="mx-auto w-full max-w-5xl px-4 pb-20 pt-28 md:px-8">
+      <p className="eyebrow">Staff</p>
+      <h1 className="display mt-2 text-4xl md:text-6xl">Administración</h1>
+      <p className="mt-3 text-sm text-white/50">
         Gestiona usuarios y el catálogo editable de la tienda.
       </p>
 
@@ -25,43 +25,43 @@ export function AdminPage() {
         <AdminNav />
       </div>
 
-      <div className="mt-6 border border-line bg-surface">
-        <div className="flex items-center justify-between border-b border-line px-4 py-3 text-[11px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">
+      <div className="box mt-6">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-3 text-[0.65rem] font-extrabold tracking-[0.2em] text-white/45 uppercase">
           <span>Usuarios registrados</span>
           <span>{query.data?.length ?? 0}</span>
         </div>
 
         {query.isPending ? (
-          <p className="px-4 py-8 text-sm text-zinc-500">Cargando usuarios…</p>
+          <p className="px-5 py-10 text-sm text-white/45">Cargando usuarios…</p>
         ) : query.isError ? (
-          <p role="alert" className="px-4 py-8 text-sm text-red-300">
+          <p role="alert" className="px-5 py-10 text-sm text-red-300">
             No pudimos cargar los usuarios.
           </p>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="text-[11px] tracking-[0.14em] text-zinc-500 uppercase">
-              <tr className="border-b border-line">
-                <th className="px-4 py-2.5 font-semibold">Nombre</th>
-                <th className="px-4 py-2.5 font-semibold">Email</th>
-                <th className="px-4 py-2.5 font-semibold">Rol</th>
-                <th className="px-4 py-2.5 font-semibold">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(query.data ?? []).map((user) => (
-                <tr key={user.id} className="border-b border-line/60 last:border-0">
-                  <td className="px-4 py-3 text-zinc-200">{user.displayName}</td>
-                  <td className="px-4 py-3 text-zinc-400">{user.email}</td>
-                  <td className="px-4 py-3">
-                    <span className="border border-line px-2 py-0.5 text-[10px] font-bold tracking-[0.16em] uppercase">
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-400">{user.active ? 'Activo' : 'Inactivo'}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="text-[0.65rem] font-extrabold tracking-[0.2em] text-white/40 uppercase">
+                <tr className="border-b border-white/10">
+                  <th className="px-5 py-3 font-extrabold">Nombre</th>
+                  <th className="px-5 py-3 font-extrabold">Email</th>
+                  <th className="px-5 py-3 font-extrabold">Rol</th>
+                  <th className="px-5 py-3 font-extrabold">Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(query.data ?? []).map((user) => (
+                  <tr key={user.id} className="border-b border-white/10 last:border-0">
+                    <td className="px-5 py-4 font-bold text-white">{user.displayName}</td>
+                    <td className="px-5 py-4 text-white/55">{user.email}</td>
+                    <td className="px-5 py-4">
+                      <span className="bevel bevel-xs pointer-events-none">{user.role}</span>
+                    </td>
+                    <td className="px-5 py-4 text-white/55">{user.active ? 'Activo' : 'Inactivo'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </section>

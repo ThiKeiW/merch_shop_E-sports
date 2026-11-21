@@ -47,11 +47,7 @@ export function PaymentForm({ orderCode, onPaid }: Props) {
           {errorMessage}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={!stripe || processing}
-        className="w-full border border-white bg-white px-6 py-3 text-[11px] font-bold tracking-[0.18em] text-ink uppercase disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <button type="submit" disabled={!stripe || processing} className="bevel bevel-p w-full py-3.5">
         {processing ? 'Procesando pago…' : `Pagar pedido ${orderCode}`}
       </button>
     </form>

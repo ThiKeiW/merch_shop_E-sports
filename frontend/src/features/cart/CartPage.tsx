@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 
 import { formatPrice } from '@/features/catalog/format'
@@ -14,58 +15,60 @@ export function CartPage() {
   const user = useAuthStore((state) => state.user)
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
-      <p className="text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">Tu selección</p>
-      <h1 className="font-display mt-3 text-3xl tracking-tight uppercase">Carrito</h1>
+    <section className="mx-auto w-full max-w-5xl px-4 pb-20 pt-28 md:px-8">
+      <p className="eyebrow">Tu selección</p>
+      <h1 className="display mt-2 text-4xl md:text-6xl">Carrito</h1>
 
       {items.length === 0 ? (
-        <div className="mt-8 border border-line bg-surface px-5 py-12 text-center">
-          <p className="text-sm text-zinc-400">Todavía no añadiste productos.</p>
-          <Link
-            to="/catalogo"
-            className="mt-6 inline-block border border-line px-5 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-zinc-500 hover:text-white"
-          >
+        <div className="box mt-8 p-10 text-center">
+          <p className="text-sm text-white/55">Todavía no añadiste productos.</p>
+          <Link to="/catalogo" className="bevel mt-6">
             Ver catálogo
           </Link>
         </div>
       ) : (
         <div className="mt-8 space-y-3">
           {items.map((item) => (
-            <article
-              key={item.variantId}
-              className="flex flex-col gap-4 border border-line bg-surface p-4 sm:flex-row sm:items-center"
-            >
-              {item.imagePath ? (
-                <img
-                  src={item.imagePath}
-                  alt=""
-                  className="h-20 w-20 shrink-0 border border-line object-cover"
-                />
-              ) : null}
+            <article key={item.variantId} className="box flex flex-wrap items-center gap-4 p-4">
+              <div
+                className="card-img relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden text-xs font-extrabold text-white/25"
+                style={{ '--g': '#0AC8B9' } as CSSProperties}
+              >
+                {item.imagePath ? (
+                  <img src={item.imagePath} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  item.name.slice(0, 3).toUpperCase()
+                )}
+              </div>
+
               <div className="min-w-0 flex-1">
                 <Link
                   to={`/producto/${item.slug}`}
-                  className="text-sm font-semibold text-zinc-100 hover:text-white"
+                  className="font-bold text-white transition-colors hover:text-white/70"
                 >
                   {item.name}
                 </Link>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="text-sm text-white/45">
                   {item.size} / {item.color} · {item.sku}
                 </p>
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="text-sm text-white/65">
                   Stock disponible: {item.stock} · {formatPrice(item.unitPrice, item.currency)}
                 </p>
               </div>
+
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   aria-label={`Quitar una unidad de ${item.name}`}
                   onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                  className="h-8 w-8 border border-line text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white"
+                  className="bevel bevel-xs"
                 >
                   −
                 </button>
-                <span aria-label={`Cantidad de ${item.name}`} className="w-6 text-center text-sm">
+                <span
+                  aria-label={`Cantidad de ${item.name}`}
+                  className="w-5 text-center text-sm font-bold"
+                >
                   {item.quantity}
                 </span>
                 <button
@@ -73,14 +76,14 @@ export function CartPage() {
                   aria-label={`Añadir una unidad de ${item.name}`}
                   disabled={item.quantity >= item.stock}
                   onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                  className="h-8 w-8 border border-line text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-600"
+                  className="bevel bevel-xs"
                 >
                   +
                 </button>
                 <button
                   type="button"
                   onClick={() => remove(item.variantId)}
-                  className="ml-2 text-[11px] text-zinc-500 underline underline-offset-4 transition-colors hover:text-red-300"
+                  className="ml-2 text-[0.68rem] font-bold tracking-[0.12em] text-white/50 uppercase underline underline-offset-4 transition-colors hover:text-red-300"
                 >
                   Eliminar
                 </button>
@@ -88,34 +91,25 @@ export function CartPage() {
             </article>
           ))}
 
-          <div className="border border-line bg-surface p-5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="tracking-[0.18em] text-zinc-500 uppercase">Subtotal</span>
-              <span className="font-semibold text-white">{formatPrice(subtotal, currency)}</span>
+          <div className="box p-5">
+            <div className="flex items-baseline justify-between">
+              <span className="eyebrow">Subtotal</span>
+              <b className="text-lg text-white">{formatPrice(subtotal, currency)}</b>
             </div>
-            <p className="mt-2 text-[11px] text-zinc-500">
+            <p className="mt-2 text-xs text-white/45">
               El precio final y el stock se recalculan al confirmar el pedido.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               {user ? (
-                <Link
-                  to="/checkout"
-                  className="border border-white bg-white px-6 py-2.5 text-[11px] font-bold tracking-[0.18em] text-ink uppercase"
-                >
+                <Link to="/checkout" className="bevel bevel-p">
                   Continuar al pedido
                 </Link>
               ) : (
-                <Link
-                  to="/login"
-                  className="border border-white bg-white px-6 py-2.5 text-[11px] font-bold tracking-[0.18em] text-ink uppercase"
-                >
+                <Link to="/login" className="bevel bevel-p">
                   Ingresar para continuar
                 </Link>
               )}
-              <Link
-                to="/catalogo"
-                className="border border-line px-6 py-2.5 text-[11px] font-semibold tracking-[0.18em] uppercase transition-colors hover:border-zinc-500"
-              >
+              <Link to="/catalogo" className="bevel">
                 Seguir comprando
               </Link>
             </div>
