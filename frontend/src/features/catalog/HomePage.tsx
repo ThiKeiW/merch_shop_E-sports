@@ -86,7 +86,7 @@ export function HomePage() {
               className="absolute inset-0 h-full w-full object-cover transition duration-700"
             />
             <div className="shade absolute inset-0" />
-            <div className="body absolute inset-x-0 bottom-0 flex flex-col items-start gap-4 p-6 pb-10 md:p-8 md:pb-12">
+            <div className="body absolute inset-x-0 bottom-0 flex flex-col items-start gap-4">
               <span
                 className="text-[0.7rem] font-extrabold tracking-[0.3em] uppercase"
                 style={{ color: game.accent }}
