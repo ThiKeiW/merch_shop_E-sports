@@ -6,11 +6,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.merchshop.catalog.dto.CatalogFacetsResponse;
+import com.merchshop.catalog.dto.ProductDetailResponse;
 import com.merchshop.catalog.dto.ProductPageResponse;
 
 @RestController
@@ -33,6 +35,11 @@ public class CatalogController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         return catalogService.products(CatalogFilters.of(game, team, category, q), sort, page, size);
+    }
+
+    @GetMapping("/products/{slug}")
+    public ProductDetailResponse product(@PathVariable String slug) {
+        return catalogService.product(slug.trim().toLowerCase(Locale.ROOT));
     }
 
     @GetMapping("/facets")

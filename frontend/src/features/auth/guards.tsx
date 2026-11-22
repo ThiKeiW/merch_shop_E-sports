@@ -25,7 +25,7 @@ export function RequireRole({ role, children }: { role: Role; children: ReactNod
 
   if (!user) {
     return (
-      <p className="mx-auto max-w-3xl px-6 py-24 text-center text-sm text-zinc-500">
+      <p className="mx-auto max-w-3xl px-6 pt-32 pb-24 text-center text-sm text-white/45">
         Verificando sesión…
       </p>
     )
@@ -33,10 +33,10 @@ export function RequireRole({ role, children }: { role: Role; children: ReactNod
 
   if (user.role !== role) {
     return (
-      <section className="mx-auto max-w-3xl px-6 py-24 text-center">
-        <p className="font-display text-6xl text-zinc-700">403</p>
-        <h2 className="mt-4 text-xl font-semibold">No tienes permisos para ver esta sección</h2>
-        <p className="mt-2 text-sm text-zinc-500">
+      <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-6 pt-28 pb-20 text-center">
+        <p className="display text-7xl text-white/15">403</p>
+        <h2 className="display mt-4 text-2xl">No tienes permisos para ver esta sección</h2>
+        <p className="mt-3 text-sm text-white/45">
           Esta área está reservada para cuentas con rol {role}.
         </p>
       </section>

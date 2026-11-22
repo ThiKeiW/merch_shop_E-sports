@@ -1,7 +1,9 @@
 package com.merchshop.catalog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -15,9 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.merchshop.catalog.dto.CatalogFacetsResponse;
 import com.merchshop.catalog.dto.CategoryResponse;
 import com.merchshop.catalog.dto.GameResponse;
+import com.merchshop.catalog.dto.ProductDetailResponse;
 import com.merchshop.catalog.dto.ProductPageResponse;
 import com.merchshop.catalog.dto.ProductSummaryResponse;
 import com.merchshop.catalog.dto.TeamResponse;
+import com.merchshop.common.ApiException;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -33,15 +37,21 @@ public class CatalogService {
     private static final int MAX_SIZE = 48;
 
     private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
+    private final ProductImageRepository imageRepository;
     private final GameRepository gameRepository;
     private final TeamRepository teamRepository;
     private final CategoryRepository categoryRepository;
 
     public CatalogService(ProductRepository productRepository,
+                          ProductVariantRepository variantRepository,
+                          ProductImageRepository imageRepository,
                           GameRepository gameRepository,
                           TeamRepository teamRepository,
                           CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
+        this.imageRepository = imageRepository;
         this.gameRepository = gameRepository;
         this.teamRepository = teamRepository;
         this.categoryRepository = categoryRepository;
@@ -70,11 +80,32 @@ public class CatalogService {
         Page<Product> result = productRepository.findAll(specification(filters), pageable);
 
         return new ProductPageResponse(
-                ProductSummaryResponse.from(result.getContent()),
+                ProductSummaryResponse.from(result.getContent(), primaryImages(result.getContent())),
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),
                 result.getTotalPages());
+    }
+
+    private Map<Long, String> primaryImages(List<Product> products) {
+        if (products.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, String> images = new HashMap<>();
+        List<Long> ids = products.stream().map(Product::getId).toList();
+        imageRepository.findByProductIdInOrderByPrimaryDescIdAsc(ids).forEach(image ->
+                images.putIfAbsent(image.getProductId(), image.getStoragePath()));
+        return images;
+    }
+
+    public ProductDetailResponse product(String slug) {
+        Product product = productRepository.findBySlugAndActiveTrue(slug)
+                .orElseThrow(() -> ApiException.notFound("Producto no encontrado"));
+
+        return ProductDetailResponse.from(
+                product,
+                variantRepository.findByProductIdOrderBySizeAscColorAsc(product.getId()),
+                imageRepository.findByProductIdOrderByPrimaryDescIdAsc(product.getId()));
     }
 
     private static Specification<Product> specification(CatalogFilters filters) {
