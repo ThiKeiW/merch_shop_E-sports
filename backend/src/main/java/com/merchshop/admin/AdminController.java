@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.merchshop.admin.dto.AdminFacetsResponse;
 import com.merchshop.auth.dto.UserResponse;
 import com.merchshop.user.UserRepository;
 
 /**
- * Recursos exclusivos de administración. El CRUD de productos y pedidos llega
- * en la Fase 4; por ahora expone el listado de usuarios para validar el rol.
+ * Recursos exclusivos de administración: usuarios y catálogo editable.
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -21,9 +21,11 @@ import com.merchshop.user.UserRepository;
 public class AdminController {
 
     private final UserRepository userRepository;
+    private final AdminProductService adminProductService;
 
-    public AdminController(UserRepository userRepository) {
+    public AdminController(UserRepository userRepository, AdminProductService adminProductService) {
         this.userRepository = userRepository;
+        this.adminProductService = adminProductService;
     }
 
     @GetMapping("/users")
@@ -31,5 +33,10 @@ public class AdminController {
         return userRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .map(UserResponse::from)
                 .toList();
+    }
+
+    @GetMapping("/facets")
+    public AdminFacetsResponse facets() {
+        return adminProductService.facets();
     }
 }

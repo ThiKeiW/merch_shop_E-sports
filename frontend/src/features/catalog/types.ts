@@ -32,6 +32,7 @@ export type ProductSummary = {
   price: number
   currency: string
   featured: boolean
+  imageUrl?: string | null
   game: CatalogGame
   category: CatalogCategory
   team: CatalogTeam | null
@@ -43,6 +44,29 @@ export type CatalogPage = {
   size: number
   total: number
   totalPages: number
+}
+
+export type ProductVariant = {
+  id: number
+  sku: string
+  size: string
+  color: string
+  priceDelta: number
+  finalPrice: number
+  stock: number
+  available: boolean
+}
+
+export type ProductImage = {
+  id: number
+  kind: string
+  path: string
+  primary: boolean
+}
+
+export type ProductDetail = ProductSummary & {
+  variants: ProductVariant[]
+  images: ProductImage[]
 }
 
 export const CATALOG_SORTS = ['relevance', 'newest', 'price-asc', 'price-desc', 'name'] as const

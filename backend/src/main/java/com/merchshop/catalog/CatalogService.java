@@ -1,7 +1,9 @@
 package com.merchshop.catalog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -78,11 +80,22 @@ public class CatalogService {
         Page<Product> result = productRepository.findAll(specification(filters), pageable);
 
         return new ProductPageResponse(
-                ProductSummaryResponse.from(result.getContent()),
+                ProductSummaryResponse.from(result.getContent(), primaryImages(result.getContent())),
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),
                 result.getTotalPages());
+    }
+
+    private Map<Long, String> primaryImages(List<Product> products) {
+        if (products.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, String> images = new HashMap<>();
+        List<Long> ids = products.stream().map(Product::getId).toList();
+        imageRepository.findByProductIdInOrderByPrimaryDescIdAsc(ids).forEach(image ->
+                images.putIfAbsent(image.getProductId(), image.getStoragePath()));
+        return images;
     }
 
     public ProductDetailResponse product(String slug) {

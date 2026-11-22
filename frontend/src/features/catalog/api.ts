@@ -1,7 +1,7 @@
 import { apiFetch } from '@/shared/api'
 
 import { PAGE_SIZE } from './filters'
-import type { CatalogFacets, CatalogFilters, CatalogPage } from './types'
+import type { CatalogFacets, CatalogFilters, CatalogPage, ProductDetail } from './types'
 
 function toProductParams(filters: CatalogFilters): URLSearchParams {
   const params = new URLSearchParams()
@@ -21,6 +21,10 @@ function toProductParams(filters: CatalogFilters): URLSearchParams {
 
 export function fetchProducts(filters: CatalogFilters): Promise<CatalogPage> {
   return apiFetch<CatalogPage>(`/catalog/products?${toProductParams(filters).toString()}`)
+}
+
+export function fetchProduct(slug: string): Promise<ProductDetail> {
+  return apiFetch<ProductDetail>(`/catalog/products/${encodeURIComponent(slug)}`)
 }
 
 export function fetchFacets(games: string[]): Promise<CatalogFacets> {
