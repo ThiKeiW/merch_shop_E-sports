@@ -1,0 +1,69 @@
+name: merch-shop
+
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,loadtest
+      METRICS_PUBLIC: "true"
+      LOADTEST_PAYMENT_STATUS: ${LOADTEST_PAYMENT_STATUS:-requires_payment_method}
+      ORDER_EXPIRATION_SWEEP_MS: ${ORDER_EXPIRATION_SWEEP_MS:-3600000}
+      TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:-200}
+      SERVER_TOMCAT_MBEANREGISTRY_ENABLED: "true"
+
+  frontend:
+    profiles: ["frontend"]
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: merch-prometheus
+    restart: unless-stopped
+    depends_on:
+      - backend
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=6h
+    volumes:
+      - ./loadtest/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - merch-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: merch-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./loadtest/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./loadtest/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    networks:
+      - merch-net
+
+  k6:
+    image: grafana/k6:latest
+    container_name: merch-k6
+    profiles: ["k6"]
+    depends_on:
+      - backend
+    environment:
+      BASE_URL: http://backend:8080
+      LOADTEST_EMAIL: ${LOADTEST_EMAIL:-cliente@merchshop.dev}
+      LOADTEST_PASSWORD: ${LOADTEST_PASSWORD:-Cliente1234!}
+    volumes:
+      - ./loadtest/k6:/scripts:ro
+      - ./loadtest/results:/results
+    networks:
+      - merch-net
+    entrypoint: ["k6"]
+
+volumes:
+  grafana-data:
