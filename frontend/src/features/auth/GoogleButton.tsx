@@ -96,7 +96,7 @@ export function GoogleButton({ onCredential, disabled = false }: GoogleButtonPro
           size: 'large',
           shape: 'rectangular',
           text: 'continue_with',
-          width: 320,
+          width: Math.min(320, container.clientWidth || 320),
         })
       })
       .catch(() => {
@@ -116,7 +116,7 @@ export function GoogleButton({ onCredential, disabled = false }: GoogleButtonPro
 
   if (failed) {
     return (
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-white/45">
         No se pudo cargar el acceso con Google. Usa tu email y contraseña.
       </p>
     )

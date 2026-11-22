@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { useCartStore } from '@/features/cart'
+
 import { ProductDetailPage } from './ProductDetailPage'
 import type { ProductDetail } from './types'
 
@@ -80,6 +82,7 @@ function renderDetail(slug = 'jersey-t1-2024') {
 describe('ProductDetailPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    useCartStore.setState({ items: [] })
   })
 
   it('muestra el producto, su stock y permite cambiar de variante', async () => {
@@ -103,6 +106,25 @@ describe('ProductDetailPage', () => {
       expect.stringContaining('/catalog/products/jersey-t1-2024'),
       expect.anything(),
     )
+  })
+
+  it('añade la variante seleccionada al carrito persistente', async () => {
+    mockProduct({ ok: true, status: 200, body: product })
+    const ui = userEvent.setup()
+    renderDetail()
+
+    await ui.click(await screen.findByRole('button', { name: 'L NEGRO' }))
+    await ui.click(screen.getByRole('button', { name: 'Añadir al carrito' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent('Añadido')
+    expect(useCartStore.getState().items).toEqual([
+      expect.objectContaining({
+        variantId: 3,
+        sku: 'T1-JERSEY-2024-L',
+        unitPrice: 74.99,
+        quantity: 1,
+      }),
+    ])
   })
 
   it('muestra un estado 404 cuando el producto no existe', async () => {

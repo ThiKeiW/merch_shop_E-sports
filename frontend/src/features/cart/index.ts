@@ -1,2 +1,3 @@
-// Fase 5: carrito en localStorage con revalidación de stock en el servidor.
-export {}
+export { CartPage } from './CartPage'
+export { selectCartCount, selectCartSubtotal, useCartStore } from './store'
+export type { CartItem, CartItemInput } from './types'

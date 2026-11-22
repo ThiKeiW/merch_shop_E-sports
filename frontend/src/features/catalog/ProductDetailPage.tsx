@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { useCartStore } from '@/features/cart'
 import { ApiError } from '@/shared/api'
 
 import { fetchProduct } from './api'
@@ -13,13 +14,12 @@ function ProductVisual({ product }: { product: ProductDetail }) {
   const renderable = Boolean(image && (image.path.startsWith('http') || image.path.startsWith('/')))
 
   return (
-    <div className="relative aspect-square overflow-hidden border border-line bg-surface-2">
+    <div
+      className="card-img relative aspect-square overflow-hidden"
+      style={{ '--g': product.game.accentColor } as CSSProperties}
+    >
       {renderable && image ? (
-        <img
-          src={image.path}
-          alt={product.name}
-          className="h-full w-full object-cover"
-        />
+        <img src={image.path} alt={product.name} className="h-full w-full object-cover" />
       ) : (
         <>
           <div
@@ -39,23 +39,23 @@ function ProductVisual({ product }: { product: ProductDetail }) {
           />
           <span
             aria-hidden
-            className="font-display absolute inset-0 flex items-center justify-center text-[7rem] leading-none text-white/[0.08]"
+            className="display absolute inset-0 flex items-center justify-center text-[7rem] leading-none text-white/10"
           >
             {monogram(product.team?.name, product.game.name)}
           </span>
-          <span className="absolute inset-x-6 bottom-6 text-[10px] tracking-[0.22em] text-zinc-500 uppercase">
+          <span className="absolute inset-x-6 bottom-6 text-[10px] tracking-[0.22em] text-white/40 uppercase">
             Imagen en preparación
           </span>
         </>
       )}
       <span
-        className="absolute top-5 left-5 text-[11px] font-semibold tracking-[0.22em] uppercase"
+        className="absolute top-5 left-5 text-[0.7rem] font-extrabold tracking-[0.22em] uppercase"
         style={{ color: product.game.accentColor }}
       >
         {product.game.name}
       </span>
       {product.featured ? (
-        <span className="absolute top-5 right-5 border border-line bg-ink/70 px-2 py-1 text-[10px] tracking-[0.18em] text-zinc-300 uppercase">
+        <span className="absolute top-5 right-5 border border-white/20 bg-black/60 px-2 py-1 text-[0.6rem] font-extrabold tracking-[0.18em] text-white/80 uppercase backdrop-blur">
           Destacado
         </span>
       ) : null}
@@ -65,6 +65,8 @@ function ProductVisual({ product }: { product: ProductDetail }) {
 
 function ProductDetailView({ product }: { product: ProductDetail }) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [addedVariantId, setAddedVariantId] = useState<number | null>(null)
+  const addToCart = useCartStore((state) => state.add)
   const selected =
     product.variants.find((variant) => variant.id === selectedId) ??
     product.variants.find((variant) => variant.available) ??
@@ -73,9 +75,12 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
   const price = selected ? selected.finalPrice : product.price
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
-      <nav aria-label="Ruta de navegación" className="text-[11px] tracking-[0.18em] uppercase">
-        <ol className="flex flex-wrap items-center gap-2 text-zinc-500">
+    <section
+      className="mx-auto w-full max-w-[1400px] px-4 pb-20 pt-28 md:px-8"
+      style={{ '--g': product.game.accentColor } as CSSProperties}
+    >
+      <nav aria-label="Ruta de navegación" className="text-[0.7rem] tracking-[0.2em] uppercase">
+        <ol className="flex flex-wrap items-center gap-2 text-white/45">
           <li>
             <Link to="/catalogo" className="transition-colors hover:text-white">
               Catálogo
@@ -91,27 +96,25 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
             </Link>
           </li>
           <li aria-hidden>/</li>
-          <li aria-current="page" className="text-zinc-300">
+          <li aria-current="page" className="text-white/80">
             {product.name}
           </li>
         </ol>
       </nav>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
-        <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-12">
+        <div className="md:sticky md:top-24 md:self-start">
           <ProductVisual product={product} />
         </div>
 
         <div className="flex flex-col">
-          <p className="text-[11px] tracking-[0.2em] text-zinc-500 uppercase">
+          <p className="text-[0.7rem] font-bold tracking-[0.2em] text-white/45 uppercase">
             {product.category.name}
             {product.team ? ` · ${product.team.name}` : ''}
           </p>
-          <h1 className="font-display mt-3 text-3xl leading-[0.95] tracking-tight uppercase sm:text-5xl">
-            {product.name}
-          </h1>
+          <h1 className="display mt-2 text-4xl leading-[0.95] md:text-6xl">{product.name}</h1>
 
-          <p className="mt-5 max-w-prose text-sm leading-relaxed text-zinc-400">
+          <p className="mt-4 max-w-prose text-sm leading-relaxed text-white/65">
             {product.description ??
               'Producto oficial de demostración. Las imágenes y el inventario definitivo llegan en la siguiente fase.'}
           </p>
@@ -120,17 +123,17 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
             Precio {formatPrice(price, product.currency)}
             {selected ? `, variante ${selected.size}` : ''}
           </p>
-          <p className="font-display mt-8 text-4xl">{formatPrice(price, product.currency)}</p>
-          <p className="mt-1 text-[11px] tracking-[0.16em] text-zinc-500 uppercase">
+          <p className="display mt-8 text-5xl">{formatPrice(price, product.currency)}</p>
+          <p className="mt-1 text-[0.7rem] tracking-[0.15em] text-white/45 uppercase">
             {product.currency} · impuestos no incluidos
           </p>
 
           {product.variants.length > 0 ? (
             <fieldset className="mt-8">
-              <legend className="mb-3 text-[11px] font-semibold tracking-[0.22em] text-zinc-400 uppercase">
+              <legend className="mb-3 text-[0.7rem] font-extrabold tracking-[0.2em] text-white/50 uppercase">
                 Variante
               </legend>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {product.variants.map((variant) => {
                   const pressed = selected?.id === variant.id
                   return (
@@ -142,16 +145,12 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
                       disabled={!variant.available}
                       onClick={() => setSelectedId(variant.id)}
                       title={variant.available ? undefined : 'Agotado'}
-                      className={
-                        pressed
-                          ? 'flex min-w-20 flex-col items-start border border-white bg-white px-3 py-2 text-left text-ink'
-                          : 'flex min-w-20 flex-col items-start border border-line px-3 py-2 text-left text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-600 disabled:hover:border-line'
-                      }
+                      className="bevel min-w-20 flex-col items-start"
                     >
-                      <span className="text-xs font-semibold tracking-[0.08em] uppercase">
+                      <span className="text-xs font-extrabold tracking-[0.08em] uppercase">
                         {variant.size}
                       </span>
-                      <span className="text-[10px] tracking-[0.12em] opacity-70 uppercase">
+                      <span className="text-[0.6rem] tracking-[0.12em] uppercase opacity-70">
                         {variant.color}
                       </span>
                     </button>
@@ -161,11 +160,11 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
             </fieldset>
           ) : null}
 
-          <p className="mt-5 text-xs text-zinc-400">
+          <p className="mt-5 text-sm text-white/55">
             {selected ? (
               selected.available ? (
                 <>
-                  En stock · <span className="text-white">{selected.stock}</span>{' '}
+                  En stock · <b className="text-white">{selected.stock}</b>{' '}
                   {selected.stock === 1 ? 'unidad' : 'unidades'}
                 </>
               ) : (
@@ -178,38 +177,76 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
 
           <button
             type="button"
-            disabled
-            title="El carrito llega en la Fase 5"
-            className="mt-8 h-12 border border-line px-6 text-[11px] font-semibold tracking-[0.2em] uppercase disabled:cursor-not-allowed disabled:text-zinc-500"
+            disabled={!selected?.available}
+            onClick={() => {
+              if (!selected || !selected.available) {
+                return
+              }
+              addToCart({
+                variantId: selected.id,
+                productId: product.id,
+                slug: product.slug,
+                name: product.name,
+                sku: selected.sku,
+                size: selected.size,
+                color: selected.color,
+                unitPrice: selected.finalPrice,
+                currency: product.currency,
+                imagePath: product.images[0]?.path ?? null,
+                stock: selected.stock,
+              })
+              setAddedVariantId(selected.id)
+            }}
+            className="bevel bevel-p mt-8 w-full py-4"
           >
+            <svg aria-hidden className="ic h-4 w-4" viewBox="0 0 24 24">
+              <circle cx="9" cy="20" r="1.4" />
+              <circle cx="18" cy="20" r="1.4" />
+              <path d="M2 3h3l2.6 12.2a1 1 0 0 0 1 .8h8.8a1 1 0 0 0 1-.8L20 8H6" />
+            </svg>
             Añadir al carrito
           </button>
-          <p className="mt-3 text-[11px] text-zinc-500">
-            La compra se habilitará en la Fase 5. Por ahora puedes explorar variantes y stock.
-          </p>
+          {addedVariantId === selected?.id ? (
+            <p role="status" className="mt-3 text-xs text-emerald-300">
+              Añadido.{' '}
+              <Link to="/carrito" className="underline underline-offset-4">
+                Ver carrito
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-3 text-[0.7rem] text-white/40">
+              El stock se valida de nuevo al confirmar el pedido.
+            </p>
+          )}
 
-          <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-6 text-xs">
+          <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-white/10 pt-8 text-sm">
             <div>
-              <dt className="tracking-[0.18em] text-zinc-500 uppercase">SKU</dt>
-              <dd className="mt-1 text-zinc-200">{selected?.sku ?? '—'}</dd>
+              <dt className="text-[0.65rem] font-bold tracking-[0.2em] text-white/40 uppercase">SKU</dt>
+              <dd className="mt-1 text-white/85">{selected?.sku ?? '—'}</dd>
             </div>
             <div>
-              <dt className="tracking-[0.18em] text-zinc-500 uppercase">Categoría</dt>
-              <dd className="mt-1 text-zinc-200">{product.category.name}</dd>
+              <dt className="text-[0.65rem] font-bold tracking-[0.2em] text-white/40 uppercase">
+                Categoría
+              </dt>
+              <dd className="mt-1 text-white/85">{product.category.name}</dd>
             </div>
             <div>
-              <dt className="tracking-[0.18em] text-zinc-500 uppercase">Equipo</dt>
-              <dd className="mt-1 text-zinc-200">{product.team?.name ?? 'Sin equipo'}</dd>
+              <dt className="text-[0.65rem] font-bold tracking-[0.2em] text-white/40 uppercase">
+                Equipo
+              </dt>
+              <dd className="mt-1 text-white/85">{product.team?.name ?? 'Sin equipo'}</dd>
             </div>
             <div>
-              <dt className="tracking-[0.18em] text-zinc-500 uppercase">Juego</dt>
-              <dd className="mt-1 text-zinc-200">{product.game.name}</dd>
+              <dt className="text-[0.65rem] font-bold tracking-[0.2em] text-white/40 uppercase">
+                Juego
+              </dt>
+              <dd className="mt-1 text-white/85">{product.game.name}</dd>
             </div>
           </dl>
 
           <Link
             to={`/catalogo?game=${product.game.slug}`}
-            className="mt-8 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-zinc-300 uppercase underline underline-offset-4 transition-colors hover:text-white"
+            className="mt-8 inline-flex items-center gap-2 text-[0.7rem] font-extrabold tracking-[0.16em] text-white/65 uppercase underline underline-offset-4 transition-colors hover:text-white"
           >
             <span aria-hidden>←</span>
             Seguir explorando {product.game.name}
@@ -222,9 +259,9 @@ function ProductDetailView({ product }: { product: ProductDetail }) {
 
 function DetailSkeleton() {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
-      <div className="grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
-        <div className="aspect-square animate-pulse border border-line bg-surface-2" />
+    <section className="mx-auto w-full max-w-[1400px] px-4 pb-20 pt-28 md:px-8">
+      <div className="grid gap-8 md:grid-cols-2 md:gap-12">
+        <div className="card-img aspect-square animate-pulse" />
         <div className="flex flex-col gap-4">
           <div className="h-3 w-32 animate-pulse bg-surface-2" />
           <div className="h-12 w-3/4 animate-pulse bg-surface-2" />
@@ -251,32 +288,23 @@ export function ProductDetailPage() {
   if (productQuery.isError) {
     const notFound = productQuery.error instanceof ApiError && productQuery.error.status === 404
     return (
-      <section className="mx-auto w-full max-w-3xl px-4 py-24 text-center sm:px-6">
-        <p className="text-xs font-semibold tracking-[0.3em] text-zinc-500 uppercase">
-          {notFound ? '404' : 'Error'}
-        </p>
-        <h1 className="font-display mt-4 text-3xl uppercase">
+      <section className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col items-center justify-center px-4 pt-28 pb-20 text-center">
+        <p className="eyebrow">{notFound ? '404' : 'Error'}</p>
+        <h1 className="display mt-4 text-3xl">
           {notFound ? 'Producto no encontrado' : 'No pudimos cargar el producto'}
         </h1>
-        <p className="mt-4 text-sm text-zinc-400">
+        <p className="mt-4 max-w-xl text-sm text-white/55">
           {notFound
             ? 'Puede que se haya retirado del catálogo o que el enlace esté mal escrito.'
             : productQuery.error.message}
         </p>
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           {notFound ? null : (
-            <button
-              type="button"
-              onClick={() => productQuery.refetch()}
-              className="border border-line px-4 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-zinc-500 hover:text-white"
-            >
+            <button type="button" onClick={() => productQuery.refetch()} className="bevel">
               Reintentar
             </button>
           )}
-          <Link
-            to="/catalogo"
-            className="border border-line px-4 py-2 text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors hover:border-zinc-500 hover:text-white"
-          >
+          <Link to="/catalogo" className="bevel">
             Volver al catálogo
           </Link>
         </div>

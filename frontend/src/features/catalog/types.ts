@@ -32,6 +32,7 @@ export type ProductSummary = {
   price: number
   currency: string
   featured: boolean
+  imageUrl?: string | null
   game: CatalogGame
   category: CatalogCategory
   team: CatalogTeam | null
