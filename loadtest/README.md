@@ -14,7 +14,7 @@ loadtest/
   prometheus/prometheus.yml    # scrape de /actuator/prometheus
   grafana/                     # datasource y dashboard provisionados
   sql/                         # seed y reset de stock
-  results/                     # salida JSON de k6
+  results/                     # salida JSON de k6 (ignorada por Git; solo .gitkeep se versiona)
 ```
 
 ## Preparación

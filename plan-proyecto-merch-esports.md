@@ -90,7 +90,7 @@ Sin plazo fijo; estimaciones para una sola persona (≈ 13–16 semanas a ritmo 
 | **5. Carrito y pedidos** | Carrito localStorage, creación de pedido, reserva y descuento de stock | Flujo hasta pedido `PENDING` | 1–2 sem |
 | **6. Pagos** | Payment Element, webhooks idempotentes, estados, correo con `@Async` | Compra completa en Test Mode | 2 sem |
 | **7. Rediseño de interfaces** | Auditoría visual, sistema de diseño (tipografía, color, espaciado, componentes), rediseño de home, catálogo, detalle, carrito, checkout, admin y estados vacíos/error/carga; responsive y accesibilidad AA | UI renovada y coherente | 1–2 sem |
-| **8. Calidad y rendimiento** | Cobertura de tests, métricas Micrometer/Prometheus/Grafana, escenarios k6 hasta 1000 VUs, ajustes | Informe de carga | 1–2 sem |
+| **8. Calidad y rendimiento** | Cobertura de tests, métricas Micrometer/Prometheus/Grafana, escenarios k6 hasta 500 VUs, ajustes | [`loadtest/INFORME.md`](./loadtest/INFORME.md) | 1–2 sem |
 | **9. Despliegue** | Pipeline completo en GitHub Actions, imágenes a Azure Container Registry, Azure Container Apps | Entorno público | 1 sem |
 
 ## 6. Pruebas
@@ -102,11 +102,14 @@ Sin plazo fijo; estimaciones para una sola persona (≈ 13–16 semanas a ritmo 
 
 ## 7. Carga y observabilidad
 
-- **Métricas:** latencia (p50/p95/p99), requests por segundo, tasa de errores, CPU, memoria, hilos del pool `@Async`, pool de conexiones (HikariCP).
-- **Escenarios k6:** navegar catálogo con filtros (70%), login y carrito (20%), checkout con stock limitado (10%).
-- **Rampa:** 100 → 500 → 1000 VUs sostenidos, con umbrales como `p95 < 800ms` y `errores < 1%`.
-- **Prueba crítica:** muchos usuarios comprando la última unidad; resultado esperado: cero stock negativo.
+Implementado en `loadtest/` (override de Compose, scripts k6, Prometheus, Grafana y SQL de preparación); el detalle está en [`loadtest/README.md`](./loadtest/README.md) y las mediciones en [`loadtest/INFORME.md`](./loadtest/INFORME.md).
+
+- **Métricas:** latencia (p50/p95/p99), requests por segundo, tasa de errores, hilos de Tomcat y pool de conexiones (HikariCP). CPU/memoria se observan en Docker.
+- **Escenarios k6:** `smoke`, `browse`, `shopper`, `checkout`, `journey` (70/20/10), `stock-race`, `soak` y `spike`.
+- **Ejecutado:** `journey` a 100 VUs y `spike` hasta 500 VUs, con umbrales en verde. La rampa sostenida 100 → 300 → 500 VUs (y el objetivo inicial de 1000 VUs) queda como extensión.
+- **Prueba crítica:** 50 VUs compiten por la última unidad; resultado verificado: 1 pedido `201`, 49 conflictos `409` y stock final 0, sin sobreventa.
 - Para Stripe en las pruebas de carga se usa un **mock del PaymentIntent** (perfil `loadtest`), para no saturar la API de Stripe.
+- Los JSON de resultados y los logs se generan en `loadtest/results/` y se ignoran en Git; solo se conserva `.gitkeep`.
 
 ## 8. Riesgos
 

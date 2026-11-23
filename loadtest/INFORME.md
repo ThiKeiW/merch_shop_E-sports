@@ -27,7 +27,7 @@ Se habilitó `SERVER_TOMCAT_MBEANREGISTRY_ENABLED=true` en el override de carga 
 | `journey.js` (70/20/10) | 100 | 2 min | 34,757 | 283.3/s | 18.0 ms | 62.6 ms | 162.6 ms | 61,379/61,379 | 0% |
 | `spike.js` | 500 | 3 min | 75,726 | 418.7/s | 663.2 ms | 1.68 s | 2.18 s | 126,210/126,210 | 0% |
 
-Umbrales de k6 verificados en las cuatro corridas: todos en verde. Los JSON completos están en `loadtest/results/`.
+Umbrales de k6 verificados en las cuatro corridas: todos en verde. Los JSON completos se generan en `loadtest/results/` y no se versionan; solo se conserva `.gitkeep`.
 
 ### Stock-race
 
