@@ -40,15 +40,18 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final boolean metricsPublic;
 
     public SecurityConfig(@Value("${app.cors.allowed-origins}") List<String> allowedOrigins,
                           JwtAuthenticationFilter jwtAuthenticationFilter,
                           RestAuthenticationEntryPoint authenticationEntryPoint,
-                          RestAccessDeniedHandler accessDeniedHandler) {
+                          RestAccessDeniedHandler accessDeniedHandler,
+                          @Value("${app.metrics.public:false}") boolean metricsPublic) {
         this.allowedOrigins = allowedOrigins;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.metricsPublic = metricsPublic;
     }
 
     @Bean
@@ -62,17 +65,21 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/google").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/webhooks/stripe").permitAll()
-                        .requestMatchers("/api/health", "/error").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/catalog/**",
-                                "/api/games/**", "/api/teams/**", "/api/categories/**",
-                                "/api/subcategories/**", "/api/products/**").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/google").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/webhooks/stripe").permitAll();
+                    auth.requestMatchers("/api/health", "/error").permitAll();
+                    auth.requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll();
+                    if (metricsPublic) {
+                        auth.requestMatchers("/actuator/prometheus").permitAll();
+                    }
+                    auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                    auth.requestMatchers(HttpMethod.GET,
+                            "/api/catalog/**",
+                            "/api/games/**", "/api/teams/**", "/api/categories/**",
+                            "/api/subcategories/**", "/api/products/**").permitAll();
+                    auth.anyRequest().authenticated();
+                })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

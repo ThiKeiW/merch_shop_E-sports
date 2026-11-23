@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +54,9 @@ public class OrderService {
     private final PaymentService paymentService;
     private final java.time.Duration reservationTtl;
     private final BigDecimal shippingCost;
+    private final Counter ordersCreated;
+    private final Counter stockConflicts;
+    private final Counter ordersCancelled;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
@@ -60,7 +66,8 @@ public class OrderService {
                          StripeGateway stripeGateway,
                          PaymentService paymentService,
                          @Value("${app.orders.reservation-ttl:PT15M}") java.time.Duration reservationTtl,
-                        @Value("${app.orders.shipping-cost:0.00}") BigDecimal shippingCost) {
+                        @Value("${app.orders.shipping-cost:0.00}") BigDecimal shippingCost,
+                        MeterRegistry meterRegistry) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
@@ -70,6 +77,15 @@ public class OrderService {
         this.paymentService = paymentService;
         this.reservationTtl = reservationTtl;
         this.shippingCost = shippingCost.setScale(2, RoundingMode.HALF_UP);
+        this.ordersCreated = Counter.builder("merch.orders.created")
+                .description("Pedidos creados correctamente")
+                .register(meterRegistry);
+        this.stockConflicts = Counter.builder("merch.orders.stock_conflict")
+                .description("Pedidos rechazados por stock insuficiente")
+                .register(meterRegistry);
+        this.ordersCancelled = Counter.builder("merch.orders.cancelled")
+                .description("Pedidos cancelados por el usuario")
+                .register(meterRegistry);
     }
 
     @Transactional
@@ -152,6 +168,7 @@ public class OrderService {
             Product product = products.get(variant.getProductId());
             int updated = variantRepository.decrementStock(variantId, quantities.get(variantId));
             if (updated == 0) {
+                stockConflicts.increment();
                 throw ApiException.conflict("Stock insuficiente para " + product.getName()
                         + " (" + variant.getSize() + " / " + variant.getColor() + ")");
             }
@@ -171,6 +188,7 @@ public class OrderService {
 
         orderItems.forEach(item -> item.setOrderId(savedOrder.getId()));
         orderItemRepository.saveAll(orderItems);
+        ordersCreated.increment();
 
         List<OrderItem> savedItems = orderItemRepository.findByOrderIdOrderByIdAsc(savedOrder.getId());
         return OrderResponse.from(savedOrder, savedItems);
@@ -199,6 +217,7 @@ public class OrderService {
         if (updated.getStatus() == OrderStatus.PENDING) {
             throw ApiException.conflict("No se pudo cancelar el pedido");
         }
+        ordersCancelled.increment();
         return OrderResponse.from(updated, orderItemRepository.findByOrderIdOrderByIdAsc(updated.getId()));
     }
 
