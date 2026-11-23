@@ -42,3 +42,7 @@ storage/
 # Importador de catalogo (cache de red y build)
 tools/catalog-import/.cache/
 tools/catalog-import/target/
+
+# Pruebas de carga (resultados y logs locales)
+loadtest/results/*
+!loadtest/results/.gitkeep

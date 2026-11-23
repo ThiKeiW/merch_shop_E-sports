@@ -1,0 +1,19 @@
+# Perfil para pruebas de carga con k6. No usar en produccion.
+app:
+  metrics:
+    public: ${METRICS_PUBLIC:true}
+  orders:
+    # Durante la carga se evita que el barrido de reservas compita con las peticiones.
+    expiration-sweep-ms: ${ORDER_EXPIRATION_SWEEP_MS:3600000}
+  loadtest:
+    payment-status: ${LOADTEST_PAYMENT_STATUS:requires_payment_method}
+
+spring:
+  devtools:
+    restart:
+      enabled: false
+
+server:
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:200}

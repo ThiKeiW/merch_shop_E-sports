@@ -2,6 +2,9 @@ package com.merchshop.payment;
 
 import java.time.Instant;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +25,22 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final StripeGateway stripeGateway;
+    private final Counter intentsCreated;
+    private final Counter paymentsConfirmed;
 
     public PaymentService(OrderRepository orderRepository,
                           PaymentRepository paymentRepository,
-                          StripeGateway stripeGateway) {
+                          StripeGateway stripeGateway,
+                          MeterRegistry meterRegistry) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.stripeGateway = stripeGateway;
+        this.intentsCreated = Counter.builder("merch.payments.intents")
+                .description("PaymentIntents creados")
+                .register(meterRegistry);
+        this.paymentsConfirmed = Counter.builder("merch.payments.confirmed")
+                .description("Pagos confirmados como exitosos")
+                .register(meterRegistry);
     }
 
     public PaymentIntentResponse createIntent(@NotBlank String orderCode, AuthenticatedUser buyer) {
@@ -47,6 +59,7 @@ public class PaymentService {
             order.setStripePaymentIntentId(intent.id());
             orderRepository.save(order);
             upsertPayment(order, intent.id(), intent.status());
+            intentsCreated.increment();
         } else {
             intent = stripeGateway.retrieveIntent(order.getStripePaymentIntentId());
             upsertPayment(order, intent.id(), intent.status());
@@ -90,6 +103,7 @@ public class PaymentService {
         int changed = orderRepository.transitionIfStatus(
                 order.getId(), OrderStatus.PENDING, OrderStatus.PAID, Instant.now());
         if (changed > 0) {
+            paymentsConfirmed.increment();
             upsertPayment(order, intentId, "succeeded");
             return;
         }

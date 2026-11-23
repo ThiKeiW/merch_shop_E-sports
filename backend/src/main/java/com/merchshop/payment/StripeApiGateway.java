@@ -4,6 +4,7 @@ import java.math.RoundingMode;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.merchshop.common.ApiException;
@@ -20,6 +21,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
+@Profile("!loadtest")
 public class StripeApiGateway implements StripeGateway {
 
     private static final String PROVIDER = "stripe";

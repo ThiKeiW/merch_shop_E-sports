@@ -14,6 +14,7 @@ La planeación completa está en [`plan-proyecto-merch-esports.md`](./plan-proye
 | Backend | Spring Boot 4.1 · Java 21 · Spring Security · JWT (HS256) · Spring Data JPA · Bean Validation · Micrometer |
 | Base de datos | MySQL 8.4 (esquema y seed en SQL idempotente) |
 | Infra | Docker Compose · GitHub Actions |
+| Pruebas de carga | k6 · Prometheus · Grafana (Fase 8, `loadtest/`) |
 | UI | Sistema visual de Fase 7: Nunito, componentes biselados, responsive y accesibilidad |
 | Pagos | Stripe Payment Element + webhooks (Fase 6) |
 
@@ -118,7 +119,8 @@ El build incluye `tsc -b`; la suite frontend cubre 44 pruebas.
 backend/    Spring Boot: config, common (errores, health), auth, security (JWT), catalog, user, admin, order
 db/         01-schema.sql (DDL), 02-seed.sql (usuarios) y 03-catalog.sql (catálogo real), idempotentes
 frontend/   SPA por funcionalidades: auth, catalog, cart, checkout, orders, admin, shared
-.github/    CI: backend, frontend y validación de Compose
+.github/    CI: backend, frontend, validación de Compose y workflow manual Loadtest
+loadtest/   override de Compose, k6, Prometheus/Grafana, SQL de seed e informe de carga
 ```
 
 ## Base de datos
@@ -165,6 +167,20 @@ stripe listen --forward-to localhost:8080/api/webhooks/stripe --events payment_i
 ```
 
 El CLI imprime un `whsec_...` propio que debes poner en `STRIPE_WEBHOOK_SECRET` y reiniciar el backend; no mezcles ese secreto con el de un endpoint del Dashboard.
+
+## Pruebas de carga (Fase 8)
+
+La suite de k6, el mock de Stripe y el stack de observabilidad viven en `loadtest/`:
+
+```bash
+docker compose -f compose.yaml -f loadtest/compose.loadtest.yaml up -d --build mysql backend prometheus grafana
+docker compose -f compose.yaml -f loadtest/compose.loadtest.yaml --profile k6 run --rm k6 run --summary-export=/results/smoke.json /scripts/smoke.js
+```
+
+- Prometheus: http://localhost:9090 · Grafana: http://localhost:3000 (`admin`/`admin`), dashboard **Merch Shop - Carga** (`merch-loadtest`).
+- Detén el frontend (`docker compose ... stop frontend`) para liberar CPU; el override usa el perfil `docker,loadtest` y un `StripeGateway` simulado.
+- Los JSON de resultados y los logs se escriben en `loadtest/results/` pero **no se versionan**; la carpeta conserva solo `.gitkeep`.
+- Guía completa: [`loadtest/README.md`](./loadtest/README.md). Resultados y conclusiones: [`loadtest/INFORME.md`](./loadtest/INFORME.md).
 
 ## Desarrollo local sin Docker
 
@@ -216,14 +232,15 @@ cd backend && ./mvnw verify
 
 - El test de contexto del backend levanta MySQL 8.4 con **Testcontainers**, así que requiere Docker en ejecución.
 - Vitest + Testing Library cubren el frontend; la cobertura se genera con `npm run test:coverage`.
+- La suite de carga se lanza con el workflow manual **Loadtest** o los comandos de `loadtest/README.md`; sus resultados y logs no se versionan.
 
 ## Flujo de ramas
 
 - `main`: versiones estables.
 - `develop`: integración continua de las fases.
-- `feature/backend`, `feature/frontend` (y futuras `feature/<tema>`): trabajo por área; se integran en `develop` y luego `develop` pasa a `main`.
+- `feature/backend`, `feature/frontend`, `feature/loadtest` (y futuras `feature/<tema>`): trabajo por área; se integran en `develop` y luego `develop` pasa a `main`.
 
-Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
+Cada push a `main`, `develop` o `feature/**` ejecuta el CI; el flujo **Loadtest** se dispara manualmente.
 
 ## Roadmap
 
@@ -236,7 +253,7 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 | 5 | Carrito localStorage y pedidos con reserva de stock | Hecha |
 | 6 | Stripe Payment Element, reconciliación de pagos y webhooks idempotentes | Hecha |
 | 7 | Rediseño de interfaces (sistema de diseño, responsive, accesibilidad) | Hecha |
-| 8 | Calidad, métricas y pruebas de carga con k6 | Pendiente |
+| 8 | Calidad, métricas y pruebas de carga con k6 | Hecha |
 | 9 | Despliegue en Azure | Pendiente |
 
 ## Notas de decisiones
@@ -248,3 +265,4 @@ Cada push a `main`, `develop` o `feature/**` ejecuta el CI.
 - Las imágenes del catálogo se importan en `db/03-catalog.sql` desde `/images/products`; el frontend usa placeholder solo si la ruta no existe.
 - El stock del carrito es orientativo: la reserva real se valida de nuevo contra MySQL al confirmar el pedido.
 - El rediseño de Fase 7 fue exclusivamente visual: no cambió rutas, DTOs, reglas de stock ni integración con Stripe.
+- La Fase 8 usa un `StripeGateway` simulado bajo el perfil `loadtest`, valida hasta 500 VUs y no versiona resultados ni logs de k6.
